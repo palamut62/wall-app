@@ -628,6 +628,21 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Çevre Koşulları Sınıfı (TS 500 Tablo 7.2)</label>
+                            <select id="cevre_sinifi">
+                                <option value="XC1">XC1 - Kuru veya sürekli ıslak (örtü 20mm)</option>
+                                <option value="XC2">XC2 - Islak, nadiren kuru (örtü 25mm)</option>
+                                <option value="XC3">XC3 - Orta nem (örtü 25mm)</option>
+                                <option value="XC4" selected>XC4 - Dönüşümlü ıslak-kuru (örtü 30mm)</option>
+                                <option value="XD1">XD1 - Orta nem + klorür (örtü 40mm)</option>
+                                <option value="XD2">XD2 - Islak + klorür (örtü 40mm)</option>
+                                <option value="XS1">XS1 - Deniz havası (örtü 40mm)</option>
+                                <option value="XS2">XS2 - Deniz suyuna batık (örtü 45mm)</option>
+                                <option value="XS3">XS3 - Gelgit + dalga (örtü 50mm)</option>
+                            </select>
+                            <span class="unit">Dayanıklılık için</span>
+                        </div>
+                        <div class="form-group">
                             <label>Beton Birim Hacim Ağırlığı (γ<sub>c</sub>)</label>
                             <input type="number" id="gamma_beton" value="25.0" step="0.1">
                             <span class="unit">kN/m³</span>
@@ -764,6 +779,8 @@
                 // Malzeme
                 yapisal_standart: document.getElementById('yapisal_standart').value,
                 beton_sinifi: document.getElementById('beton_sinifi').value,
+                donati_sinifi: document.getElementById('donati_sinifi').value,
+                cevre_sinifi: document.getElementById('cevre_sinifi').value,
                 gamma_beton: parseFloat(document.getElementById('gamma_beton').value),
                 gamma_su: parseFloat(document.getElementById('gamma_su').value)
             };
@@ -867,13 +884,43 @@
         function calculateGeotechnics(inputs) {
             const results = {};
             
-            // Aktif toprak basıncı katsayısı (Rankine)
+            // Aktif toprak basıncı katsayısı (Rankine - basit durum)
             const phi_rad = inputs.phi * Math.PI / 180;
-            results.K_a = Math.pow(Math.tan(Math.PI/4 - phi_rad/2), 2);
-            
+            const delta_rad = inputs.delta * Math.PI / 180;
+            results.K_a_rankine = Math.pow(Math.tan(Math.PI/4 - phi_rad/2), 2);
+
+            // Coulomb teorisi (genel durum - duvar sürtünmesi dahil)
+            // α = 90° (düşey duvar), β = 0° (yatay dolgu yüzeyi) varsayımı
+            const alpha = Math.PI / 2; // 90° (düşey duvar)
+            const beta = 0; // 0° (yatay dolgu)
+
+            const sin_alpha_phi = Math.sin(alpha + phi_rad);
+            const sin_alpha = Math.sin(alpha);
+            const sin_alpha_delta = Math.sin(alpha - delta_rad);
+            const sin_alpha_beta = Math.sin(alpha + beta);
+            const sin_phi_delta = Math.sin(phi_rad + delta_rad);
+            const sin_phi_beta = Math.sin(phi_rad - beta);
+
+            let K_a_coulomb;
+            const term_inside_sqrt = (sin_phi_delta * sin_phi_beta) / (sin_alpha_delta * sin_alpha_beta);
+
+            if (term_inside_sqrt >= 0) {
+                const denominator = Math.pow(sin_alpha, 2) * sin_alpha_delta *
+                                   Math.pow(1 + Math.sqrt(term_inside_sqrt), 2);
+                K_a_coulomb = Math.pow(sin_alpha_phi, 2) / denominator;
+            } else {
+                K_a_coulomb = results.K_a_rankine; // Geçersiz durum, Rankine kullan
+            }
+
+            results.K_a_coulomb = K_a_coulomb;
+
+            // Kullanılacak katsayı (Coulomb daha genel ve doğru)
+            results.K_a = K_a_coulomb;
+            results.teori = 'Coulomb (duvar sürtünmesi dahil)';
+
             // Pasif toprak basıncı katsayısı
             results.K_p = Math.pow(Math.tan(Math.PI/4 + phi_rad/2), 2);
-            
+
             // Statik aktif toprak itkisi
             results.P_a = 0.5 * inputs.gamma_zemin * Math.pow(inputs.H, 2) * results.K_a;
             results.P_a_arm = inputs.H / 3;
@@ -907,8 +954,15 @@
 
         function calculateSeismic(inputs, geoResults) {
             const results = {};
-            
+
+            // İstinat yapısı periyodu hesabı (TBDY 2018 için kontrol)
+            // Basitleştirilmiş formül: T ≈ 0.05 * H (konsol istinat için)
+            const T = 0.05 * inputs.H; // saniye
+            results.T = T;
+
             // TBDY 2018 Tablo 16.1 - Zemin sınıfı katsayıları
+            // Not: Bu değerler kısa periyot bölgesi (T ≤ T_A) için geçerlidir
+            // İstinat yapıları genellikle T < 0.2s olduğundan S_DS kullanımı uygundur
             const F_s_values = {
                 'ZA': 0.8,
                 'ZB': 0.9,
@@ -916,10 +970,15 @@
                 'ZD': 1.6,
                 'ZE': 2.4
             };
-            
+
             const F_s = F_s_values[inputs.zemin_sinifi];
             results.F_s = F_s;
-            
+
+            // Periyot kontrolü ve uyarı
+            if (T > 0.2) {
+                results.periyot_uyari = 'Periyot > 0.2s. F_s değerleri S_D1 ile kontrol edilmeli.';
+            }
+
             // Zemin sınıfına göre düzeltilmiş spektral ivme
             const S_DS_zemin = inputs.SDS * F_s;
             results.S_DS_zemin = S_DS_zemin;
@@ -992,7 +1051,31 @@
             } else {
                 results.kv_durum = '(1-k_v) kullanıldı';
             }
-            
+
+            // Deprem yön kuralı (TBDY 2018 Madde 4.4.3)
+            // İki yönlü deprem etkisi kombinasyonları
+            // U-kanal için: x-yönü (duvar enkesit), y-yönü (kanal ekseni)
+            // Basitleştirilmiş yaklaşım: Enine yön etkisi %30 olarak alınır
+            const E_x = results.Delta_P; // X-yönü (ana etki)
+            const E_y = 0.3 * E_x; // Y-yönü (%30 azaltılmış)
+
+            // İki kombinasyon
+            const E_combo_1 = E_x + 0.3 * E_y; // E_x + 0.3E_y
+            const E_combo_2 = 0.3 * E_x + E_y; // 0.3E_x + E_y
+
+            // Kritik kombinasyon
+            const E_tasarim = Math.max(E_combo_1, E_combo_2);
+
+            results.E_x = E_x;
+            results.E_y = E_y;
+            results.E_combo_1 = E_combo_1;
+            results.E_combo_2 = E_combo_2;
+            results.E_tasarim = E_tasarim;
+            results.deprem_yon_bilgi = E_combo_1 >= E_combo_2 ? 'E_x + 0.3E_y kritik' : '0.3E_x + E_y kritik';
+
+            // Not: Delta_P ana hesaplarda kullanılmaya devam eder
+            // E_tasarim sadece bilgi amaçlıdır (2D analiz için)
+
             return results;
         }
 
@@ -1105,9 +1188,9 @@
             return results;
         }
 
-        function calculateStructural(inputs, geoResults, seismicResults) {
+        function calculateStructural(inputs, geoResults, seismicResults, hydraulicsResults) {
             const results = {};
-            
+
             // Malzeme özellikleri - Standarda göre
             const fck_values = {
                 'C25': 25, 'C30': 30, 'C35': 35, 'C40': 40
@@ -1143,19 +1226,34 @@
             results.fck = fck;
             results.fyk = fyk;
             results.fyd = fyd;
-            
+
+            // Çevre koşulları sınıfına göre minimum örtü kalınlığı (TS 500 Tablo 7.2)
+            const cover_values = {
+                'XC1': 0.020, 'XC2': 0.025, 'XC3': 0.025, 'XC4': 0.030,
+                'XD1': 0.040, 'XD2': 0.040,
+                'XS1': 0.040, 'XS2': 0.045, 'XS3': 0.050
+            };
+            const c_nom = cover_values[inputs.cevre_sinifi] || 0.030; // varsayılan 30mm
+            results.c_nom = c_nom;
+            results.cevre_sinifi = inputs.cevre_sinifi;
+
             // DOĞRU YÜK AYIRIMI (KRİTİK DÜZELTME!)
             // Sürekli yükler (G - Dead Load)
             const G = geoResults.W_temel + geoResults.W_perde + geoResults.W_zemin;
-            
+
             // Hareketli yükler (Q - Live Load) - Toprak itkisi değişken yük
             const Q = geoResults.P_a + geoResults.P_q;
-            
+
+            // Su basıncı (kanal içi - hidrostatik basınç)
+            // Su dolu durum için hareketli yük olarak kabul edilir
+            const P_w = hydraulicsResults ? (hydraulicsResults.P_w || 0) : 0; // kN/m
+
             // Deprem yükü (E - Earthquake)
             const E = seismicResults.Delta_P;
-            
+
             results.G = G;
             results.Q = Q;
+            results.P_w = P_w;
             results.E = E;
             
             // Yük kombinasyonları (DÜZELTME!)
@@ -1177,36 +1275,59 @@
             
             // Perde dibi momenti (kritik kesit)
             const H_perde = inputs.H - inputs.TH;
-            
+
+            // Su basıncı momenti (kanal içindeki su, iç yüzeyden etki eder)
+            // P_w toplam hidrostatik basınç (kN/m), moment kolu h_su/3
+            const h_su = hydraulicsResults ? (hydraulicsResults.h_su || 0) : 0;
+            const M_water = P_w * (h_su / 3 + inputs.TH); // kN.m/m (iç yüzeyden)
+
             // Moment hesabı - Doğru yük kombinasyonları ile
             const M_static_G = 0; // Düşey yüklerin momenti ihmal edilebilir
             const M_static_Q = geoResults.P_a * (geoResults.P_a_arm + inputs.TH) +
                                geoResults.P_q * (geoResults.P_q_arm + inputs.TH);
-            const M_earthquake = M_static_Q + E * seismicResults.P_t_arm;
-            
+
+            // Su basıncı dış yüke zıt yönde (azaltıcı etki)
+            const M_static_Q_net = M_static_Q - M_water;
+
+            const M_earthquake = M_static_Q_net + E * seismicResults.P_t_arm;
+
             let M_d_perde;
             if (inputs.yapisal_standart === 'TS500') {
-                M_d_perde = 1.6 * M_static_Q;  // Statik durum kritik
+                M_d_perde = 1.6 * M_static_Q_net;  // Statik durum kritik
                 const M_d_earthquake = 1.0 * M_earthquake;
                 M_d_perde = Math.max(M_d_perde, M_d_earthquake);
             } else {
-                M_d_perde = 1.5 * M_static_Q;
+                M_d_perde = 1.5 * M_static_Q_net;
                 const M_d_earthquake = 1.0 * M_earthquake;
                 M_d_perde = Math.max(M_d_perde, M_d_earthquake);
             }
+
+            results.M_water = M_water;
+            results.h_su = h_su;
             
             results.M_d_perde = M_d_perde;
-            
+
             // Gerekli donatı alanı
-            const d = inputs.W_alt - 0.05; // Faydalı yükseklik (5cm örtü)
+            const fi_donati = 16; // mm (varsayılan donatı çapı)
+            const d = inputs.W_alt - c_nom - fi_donati/2000; // Faydalı yükseklik (örtü + yarım donatı)
             const mu = M_d_perde / (1.0 * Math.pow(d, 2) * results.fcd * 1000); // 1m genişlik
-            
+
+            // Sünek göçme kontrolü (TS 500 Madde 7.2 - ε_s ≥ 0.01)
+            // Maksimum donatı oranı: ε_cu = 0.003, ε_s,min = 0.01 için
+            const eps_cu = 0.003; // Beton ezilme deformasyonu
+            const eps_s_min = 0.01; // Minimum donatı deformasyonu (sünek göçme)
+            const x_max_d = eps_cu / (eps_cu + eps_s_min); // x_max / d = 0.003 / 0.013 = 0.231
+            const omega_max = 0.85 * x_max_d; // Maksimum ω ≈ 0.196
+
             let omega;
-            if (mu < 0.295) {
+            if (mu <= omega_max * 0.85) {
                 omega = 0.85 * (1 - Math.sqrt(1 - 2 * mu / 0.85));
             } else {
-                omega = 0.295; // Maksimum donatı oranı
+                omega = omega_max; // Maksimum donatı oranı (sünek göçme sınırı)
+                results.sunek_gocme_uyari = true;
             }
+
+            results.omega_max = omega_max;
             
             const As_perde = omega * results.fcd * 1000 * d / results.fyd;
             
@@ -1235,36 +1356,235 @@
             const s_max = Math.min(300, 1.5 * inputs.W_alt * 1000);
             results.s_max = s_max;
             results.aralık_ok = results.donati_araligi <= s_max;
-            
-            // Kesme kontrolü (Normal kuvvet etkisi dahil - DÜZELTME!)
+
+            // Donatı sıyrılma (ankraj) boyu hesabı (TS 500 Madde 8.6)
+            const f_bd = inputs.yapisal_standart === 'TS500'
+                ? 1.4 * results.fctd  // TS 500: f_bd = 1.4 * f_ctd (nervürlü donatı)
+                : 2.25 * results.fctd; // EC2: farklı formül
+
+            const l_b_basic = (fi_donati * results.fyd) / (4 * f_bd); // Temel sıyrılma boyu (mm)
+
+            // Ankraj boyu katsayıları (basitleştirilmiş, güvenli taraf)
+            const alpha_1 = 1.0; // Donatı şekli katsayısı (düz donatı)
+            const alpha_2 = 1.0; // Beton örtüsü katsayısı
+            const alpha_3 = 1.0; // Sargı donatısı katsayısı
+            const alpha_4 = 1.0; // Kaynak katsayısı
+            const alpha_5 = 1.0; // Basınç altında katsayı
+
+            const l_b_net = l_b_basic * alpha_1 * alpha_2 * alpha_3 * alpha_4 * alpha_5;
+            const l_b_min = Math.max(0.3 * l_b_basic, 10 * fi_donati, 100); // mm
+            const l_b = Math.max(l_b_net, l_b_min);
+
+            results.f_bd = f_bd;
+            results.l_b = l_b / 1000; // m cinsinden
+            results.l_b_mm = Math.round(l_b);
+
+            // Temel-perde birleşiminde mevcut uzunluk kontrolü
+            const mevcut_ankraj_uzunlugu = inputs.B * 1000; // Temel genişliği (mm)
+            results.ankraj_ok = mevcut_ankraj_uzunlugu >= l_b;
+
+            // Kesme kontrolü (TS 500 Madde 8.3)
             const V_d_kesme_static = 1.6 * geoResults.P_h_static;
             const V_d_kesme_earthquake = 1.0 * seismicResults.P_t;
             const V_d_kesme = Math.max(V_d_kesme_static, V_d_kesme_earthquake);
-            
-            // Normal kuvvet etkisi (basınç olumlu etki)
-            const N_d = 0.9 * G / 1.0; // Metre başına, güvenli taraf için %90
-            const A_g = inputs.W_alt * 1000; // mm²
-            
+
             let V_cr;
             if (inputs.yapisal_standart === 'TS500') {
-                // TS 500 formülü - Normal kuvvet etkisi dahil
-                V_cr = 0.65 * results.fctd * inputs.W_alt * d * 
-                       Math.sqrt(1 + 0.07 * (N_d / (A_g / 1000)));
+                // TS 500 Madde 8.3 - Etriyesiz kesme dayanımı
+                // V_cr = 0.65 * f_ctd * b_w * d (kN)
+                const b_w = inputs.W_alt; // Gövde genişliği (m)
+                V_cr = 0.65 * results.fctd * b_w * d * 1000; // kN
+
+                // Not: TS 500'de istinat duvarları için normal kuvvet etkisi
+                // Madde 12'de özel kurallar var, ancak basitleştirilmiş yaklaşım kullanılıyor
             } else {
                 // EC2 formülü (basitleştirilmiş)
                 const C_Rd_c = 0.18 / 1.5;
                 const k = Math.min(1 + Math.sqrt(200 / (d * 1000)), 2.0);
                 const rho_l = Math.min(results.As_perde_tasarim / (inputs.W_alt * d * 1000), 0.02);
-                
-                V_cr = C_Rd_c * k * Math.pow(100 * rho_l * fck, 1/3) * 
-                       inputs.W_alt * d * 1000 / 1000;
+
+                V_cr = C_Rd_c * k * Math.pow(100 * rho_l * fck, 1/3) *
+                       inputs.W_alt * d * 1000; // kN
             }
-            
+
             results.V_d_kesme = V_d_kesme;
             results.V_cr = V_cr;
-            results.N_d = N_d;
             results.kesme_ok = V_d_kesme <= V_cr;
-            
+
+            // Çatlak genişliği kontrolü (TS 500 Madde 13.5)
+            // Servis yükü altında hesaplama (faktörsüz yükler)
+            const M_s = geoResults.P_a * (geoResults.P_a_arm + inputs.TH) +
+                        geoResults.P_q * (geoResults.P_q_arm + inputs.TH); // Servis momenti
+
+            // Çekme bölgesinde beton çatlamış kabul edilerek (Durum II)
+            // Basitleştirilmiş çatlak genişliği formülü
+            const E_s = 200000; // MPa (donatı elastisite modülü)
+            const n = E_s / (5700 * Math.sqrt(fck)); // Modüler oran
+
+            // Etkili donatı alanı
+            const A_s_eff = results.As_perde_tasarim; // mm²/m
+
+            // Çekme donatısı gerilmesi (basitleştirilmiş)
+            const x = d * (Math.sqrt(n * n * A_s_eff * A_s_eff / (1000 * d * 1000 * d) + 2 * n * A_s_eff / (1000 * d)) - n * A_s_eff / (1000 * d)); // Tarafsız eksen derinliği (m)
+            const I_cr = (1000 * Math.pow(x, 3) / 3) + n * A_s_eff * Math.pow(d - x, 2) / 1000000; // Çatlamış kesit atalet momenti (m⁴)
+            const sigma_s = (M_s * (d - x) * n) / I_cr; // Donatı gerilmesi (MPa)
+
+            // Çatlak aralığı
+            const c_cover = c_nom * 1000; // Örtü kalınlığı (mm)
+            const s_r_max = 2 * c_cover + 0.1 * fi_donati + (fi_donati / A_s_eff) * 1000; // mm (basitleştirilmiş)
+
+            // Ortalama donatı deformasyonu
+            const eps_sm = Math.max(sigma_s / E_s - 0.4 * results.fctd / E_s, 0.6 * sigma_s / E_s);
+
+            // Çatlak genişliği (TS 500 Madde 13.5.2)
+            const w_k = s_r_max * eps_sm; // mm
+
+            results.w_k = w_k;
+            results.sigma_s_servis = sigma_s;
+
+            // Çatlak genişliği limitleri (TS 500 Tablo 13.4)
+            let w_k_max;
+            if (inputs.cevre_sinifi === 'XC1') {
+                w_k_max = 0.4; // mm
+            } else if (['XC2', 'XC3', 'XC4'].includes(inputs.cevre_sinifi)) {
+                w_k_max = 0.3; // mm (su geçirimsizlik için daha sıkı)
+            } else {
+                w_k_max = 0.2; // mm (klorür ortamı, deniz suyu - çok sıkı)
+            }
+
+            results.w_k_max = w_k_max;
+            results.catlak_ok = w_k <= w_k_max;
+
+            return results;
+        }
+
+        // İkinci mertebe etkileri (P-Δ) hesabı
+        function calculateSecondOrderEffects(inputs, geoResults) {
+            const results = {};
+
+            // Perde yüksekliği ve atalet momenti
+            const H_perde = inputs.H - inputs.TH;
+            const W_ort = (inputs.W_alt + inputs.W_ust) / 2;
+
+            // Basit kesit atalet momenti (dikdörtgen)
+            const I = (1.0 * Math.pow(W_ort, 3)) / 12; // m⁴ (1m genişlik)
+
+            // Elastisite modülü (beton)
+            const E_c = 5700 * Math.sqrt(30); // MPa (C30 için yaklaşık)
+            results.E_c = E_c;
+
+            // Burkulma yükü (Euler)
+            const P_cr = (Math.PI * Math.PI * E_c * I * 1000) / Math.pow(H_perde, 2); // kN
+
+            // Eksenel yük
+            const N_Ed = geoResults.W_perde + geoResults.W_zemin; // kN/m
+
+            // Narinlik oranı
+            const i = Math.sqrt(I / (W_ort * 1.0)); // Atalet yarıçapı (m)
+            const lambda = H_perde / i;
+            results.lambda = lambda;
+
+            // İkinci mertebe moment büyütme faktörü
+            const beta = 1 / (1 - N_Ed / P_cr);
+            results.beta = beta;
+            results.P_cr = P_cr;
+            results.N_Ed = N_Ed;
+
+            // Narinlik kontrolü (TS 500 Madde 11.7)
+            // λ > 25 ise ikinci mertebe etkileri dikkate alınmalı
+            results.ikinci_mertebe_gerekli = lambda > 25;
+
+            if (lambda <= 25) {
+                results.sonuc = 'Kısa eleman - İkinci mertebe etkileri ihmal edilebilir';
+            } else {
+                results.sonuc = 'Narin eleman - İkinci mertebe etkileri önemli (β=' + beta.toFixed(2) + ')';
+            }
+
+            return results;
+        }
+
+        // Zemin oturma hesabı
+        function calculateSettlement(inputs, geoResults, stabilityResults) {
+            const results = {};
+
+            // Efektif temel genişliği
+            const B_eff = stabilityResults.bearing.B_eff;
+
+            // Taban basıncı (ortalama)
+            const q_net = geoResults.V_total / inputs.B; // kN/m² (net basınç)
+            results.q_net = q_net;
+
+            // Elastik oturma (Terzaghi - basitleştirilmiş)
+            // s_e = q * B * (1-ν²) / E_s
+            // E_s yaklaşık tahmin (zemin parametrelerinden)
+            const E_s = 2000 * (1 + inputs.phi / 10); // kPa (yaklaşık - korelasyon)
+            const nu = 0.3; // Poisson oranı (ortalama)
+
+            const s_elastic = (q_net * B_eff * (1 - nu * nu)) / E_s; // m
+            results.s_elastic = s_elastic * 1000; // mm
+
+            // Konsolidasyon oturması (basitleştirilmiş - kil zeminler için)
+            // s_c = H * m_v * Δσ (m_v: hacimsel sıkışma katsayısı)
+            // Sadece bilgi amaçlı, kesin değil
+            const m_v = 0.0005; // 1/kPa (ortalama değer, zemin etüdünden alınmalı)
+            const H_compress = Math.min(inputs.H, 2.0); // Sıkışma bölgesi kalınlığı (yaklaşık)
+
+            const s_consolidation = H_compress * m_v * q_net; // m
+            results.s_consolidation = s_consolidation * 1000; // mm
+
+            // Toplam oturma
+            const s_total = s_elastic + s_consolidation;
+            results.s_total = s_total * 1000; // mm
+
+            // Oturma limitleri (TS EN 1997-1)
+            const s_max = 25; // mm (maksimum toplam oturma - yapı türüne göre)
+            results.s_max = s_max;
+            results.oturma_ok = s_total * 1000 <= s_max;
+
+            results.uyari = 'Not: Oturma hesabı basitleştirilmiş. Zemin etüdü gereklidir.';
+
+            return results;
+        }
+
+        // Sıvılaşma riski kontrolü (TBDY 2018 Bölüm 16.4)
+        function calculateLiquefactionRisk(inputs) {
+            const results = {};
+
+            // Sıvılaşma potansiyeli değerlendirmesi
+            // Basitleştirilmiş kontrol (detaylı analiz zemin etüdü ile yapılmalı)
+
+            // 1. Zemin sınıfı kontrolü
+            const liquefiable_soils = ['ZD', 'ZE']; // Gevşek kumlar, yumuşak killer
+            results.zemin_risk = liquefiable_soils.includes(inputs.zemin_sinifi);
+
+            // 2. Deprem şiddeti kontrolü
+            results.deprem_risk = inputs.SDS > 0.5; // Yüksek sismik bölge
+
+            // 3. Yeraltı suyu varlığı (kullanıcı girişi yok, varsayım)
+            // U-kanal olduğu için su varlığı yüksek
+            results.su_varligi = true;
+
+            // Genel risk değerlendirmesi
+            if (results.zemin_risk && results.deprem_risk && results.su_varligi) {
+                results.risk_seviyesi = 'YÜKSEK';
+                results.renk = 'danger';
+                results.oneri = 'Detaylı sıvılaşma analizi yapılmalı! Zemin iyileştirmesi gerekebilir.';
+            } else if ((results.zemin_risk && results.deprem_risk) ||
+                       (results.zemin_risk && results.su_varligi) ||
+                       (results.deprem_risk && results.su_varligi)) {
+                results.risk_seviyesi = 'ORTA';
+                results.renk = 'warning';
+                results.oneri = 'Sıvılaşma potansiyeli değerlendirilmeli.';
+            } else {
+                results.risk_seviyesi = 'DÜŞÜK';
+                results.renk = 'success';
+                results.oneri = 'Sıvılaşma riski düşük.';
+            }
+
+            // TBDY 2018 Madde 16.4.2 kontrolü
+            results.tbdy_madde = '16.4';
+            results.uyari = 'Not: Kesin değerlendirme için SPT veya CPT deneyleri gereklidir.';
+
             return results;
         }
 
@@ -2016,9 +2336,9 @@
             }
             
             document.getElementById('stabilite-sonuc').innerHTML = html;
-            
+
             // Yapısal tasarım
-            const structuralResults = calculateStructural(inputs, geoResults, seismicResults);
+            const structuralResults = calculateStructural(inputs, geoResults, seismicResults, hydResults);
             calculationResults.structural = structuralResults;
             
             html = '<div class="info-box"><strong>TS 500 - Betonarme Yapıların Hesap ve Yapım Kuralları</strong></div>';
@@ -2284,7 +2604,7 @@
             const geoResults = calculateGeotechnics(inputs);
             const seismicResults = calculateSeismic(inputs, geoResults);
             const stabilityResults = calculateStability(inputs, geoResults, seismicResults);
-            const structuralResults = calculateStructural(inputs, geoResults, seismicResults);
+            const structuralResults = calculateStructural(inputs, geoResults, seismicResults, hydResults);
             
             // 1. Stabilite optimizasyonu
             if (!stabilityResults.devrilme_static_ok || !stabilityResults.devrilme_dynamic_ok ||
