@@ -2392,9 +2392,9 @@
             html += '<div class="result-item"><span class="result-label">Moment Katsayısı (μ)</span><span class="result-value">' + structuralResults.mu.toFixed(4) + '</span></div>';
             html += '<div class="result-item"><span class="result-label">Donatı Oranı (ω)</span><span class="result-value">' + structuralResults.omega.toFixed(4) + '</span></div>';
             html += '<div class="result-item"><span class="result-label">Maksimum ω (Sünek Göçme)</span><span class="result-value">' + structuralResults.omega_max.toFixed(4) + (structuralResults.sunek_gocme_uyari ? ' ⚠️' : ' ✓') + '</span></div>';
-            html += '<div class="result-item"><span class="result-label">Gerekli Donatı Alanı (A<sub>s</sub>)</span><span class="result-value">' + structuralResults.As_perde_gerekli.toFixed(2) + ' cm²/m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Minimum Donatı (TS 500 §12)</span><span class="result-value">' + structuralResults.As_min_perde.toFixed(2) + ' cm²/m (0.0025A<sub>g</sub>/2)</span></div>';
-            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Donatısı</strong></span><span class="result-value success">' + structuralResults.As_perde_tasarim.toFixed(2) + ' cm²/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Gerekli Donatı Alanı (A<sub>s</sub>)</span><span class="result-value">' + (structuralResults.As_perde_gerekli / 100).toFixed(2) + ' cm²/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Minimum Donatı (TS 500 §12)</span><span class="result-value">' + (structuralResults.As_min_perde / 100).toFixed(2) + ' cm²/m (0.0025A<sub>g</sub>/2)</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Donatısı</strong></span><span class="result-value success">' + (structuralResults.As_perde_tasarim / 100).toFixed(2) + ' cm²/m</span></div>';
 
             if (structuralResults.sunek_gocme_uyari) {
                 html += '<div class="warning-box">⚠️ Sünek göçme limiti aşıldı! Kesit boyutları artırılmalı veya çift donatı kullanılmalı.</div>';
