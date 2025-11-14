@@ -2130,10 +2130,13 @@
             // Geoteknik hesaplar
             const geoResults = calculateGeotechnics(inputs);
             calculationResults.geotechnics = geoResults;
-            
-            html = '<div class="formula-box"><strong>Rankine Teorisi:</strong> K<sub>a</sub> = tan²(45° - φ/2), K<sub>p</sub> = tan²(45° + φ/2)</div>';
-            html += '<div class="result-item"><span class="result-label">Aktif Toprak Basıncı Katsayısı (K<sub>a</sub>)</span><span class="result-value">' + geoResults.K_a.toFixed(3) + '</span></div>';
+
+            html = '<div class="info-box"><strong>Toprak Basıncı Teorisi:</strong> ' + geoResults.teori + '</div>';
+            html += '<div class="result-item"><span class="result-label">Rankine K<sub>a</sub> (Referans)</span><span class="result-value">' + geoResults.K_a_rankine.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Coulomb K<sub>a</sub> (δ=' + inputs.delta + '°)</span><span class="result-value">' + geoResults.K_a_coulomb.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Kullanılan K<sub>a</sub></strong></span><span class="result-value success">' + geoResults.K_a.toFixed(3) + '</span></div>';
             html += '<div class="result-item"><span class="result-label">Pasif Toprak Basıncı Katsayısı (K<sub>p</sub>)</span><span class="result-value">' + geoResults.K_p.toFixed(3) + '</span></div>';
+            html += '<div class="info-box" style="margin: 10px 0;"><small>ℹ️ Coulomb teorisi duvar-zemin sürtünmesini (δ) dikkate alır ve daha gerçekçi sonuç verir.</small></div>';
             html += '<div class="formula-box"><strong>Statik Aktif İtki:</strong> P<sub>a</sub> = (1/2) × γ × H² × K<sub>a</sub></div>';
             html += '<div class="result-item"><span class="result-label">Statik Aktif Toprak İtkisi (P<sub>a</sub>)</span><span class="result-value">' + geoResults.P_a.toFixed(2) + ' kN/m</span></div>';
             html += '<div class="result-item"><span class="result-label">P<sub>a</sub> Etkime Kolu</span><span class="result-value">' + geoResults.P_a_arm.toFixed(2) + ' m (H/3)</span></div>';
@@ -2210,13 +2213,21 @@
             calculationResults.seismic = seismicResults;
             
             html = '<div class="info-box"><strong>TBDY 2018 Pseudo-Statik Yaklaşım (Tam Mononobe-Okabe)</strong></div>';
-            
+
+            html += '<h4 style="color: #2a5298; margin-top: 15px;">Yapı Periyodu Kontrolü</h4>';
+            html += '<div class="result-item"><span class="result-label">İstinat Yapısı Periyodu (T)</span><span class="result-value">' + seismicResults.T.toFixed(3) + ' sn</span></div>';
+            if (seismicResults.periyot_uyari) {
+                html += '<div class="warning-box">' + seismicResults.periyot_uyari + '</div>';
+            } else {
+                html += '<div class="info-box">✓ T < 0.2s: Kısa periyot bölgesi, S<sub>DS</sub> kullanımı uygun.</div>';
+            }
+
             html += '<h4 style="color: #2a5298; margin-top: 15px;">Zemin Sınıfı Etkisi (TBDY 2018 Tablo 16.1)</h4>';
             html += '<div class="result-item"><span class="result-label">Zemin Sınıfı</span><span class="result-value">' + inputs.zemin_sinifi + '</span></div>';
             html += '<div class="result-item"><span class="result-label">Zemin Katsayısı (F<sub>s</sub>)</span><span class="result-value">' + seismicResults.F_s.toFixed(2) + '</span></div>';
             html += '<div class="result-item"><span class="result-label">S<sub>DS</sub> (Harita)</span><span class="result-value">' + inputs.SDS.toFixed(3) + ' g</span></div>';
             html += '<div class="result-item"><span class="result-label">S<sub>DS,zemin</sub> (Düzeltilmiş)</span><span class="result-value warning">' + seismicResults.S_DS_zemin.toFixed(3) + ' g</span></div>';
-            
+
             html += '<h4 style="color: #2a5298; margin-top: 15px;">Deprem Katsayıları</h4>';
             html += '<div class="formula-box"><strong>Yatay:</strong> k<sub>h</sub> = 0.4 × (S<sub>DS,zemin</sub>/r)<br><strong>Düşey:</strong> k<sub>v</sub> = (2/3) × k<sub>h</sub></div>';
             html += '<div class="result-item"><span class="result-label">Yatay Deprem Katsayısı (k<sub>h</sub>)</span><span class="result-value">' + seismicResults.k_h.toFixed(3) + '</span></div>';
@@ -2230,10 +2241,19 @@
             html += '<div class="result-item"><span class="result-label">Toplam Dinamik İtki (P<sub>t</sub>)</span><span class="result-value warning">' + seismicResults.P_t.toFixed(2) + ' kN/m</span></div>';
             html += '<div class="result-item"><span class="result-label">Dinamik İtki Artışı (ΔP)</span><span class="result-value danger">' + seismicResults.Delta_P.toFixed(2) + ' kN/m</span></div>';
             html += '<div class="result-item"><span class="result-label">P<sub>t</sub> Etkime Kolu</span><span class="result-value">' + seismicResults.P_t_arm.toFixed(2) + ' m (H/2)</span></div>';
-            
+
             const artis_yuzdesi = ((seismicResults.P_t - geoResults.P_h_static) / geoResults.P_h_static * 100).toFixed(1);
             html += '<div class="warning-box">⚠️ Deprem etkisiyle yatay itki <strong>%' + artis_yuzdesi + '</strong> artmıştır.</div>';
-            
+
+            html += '<h4 style="color: #2a5298; margin-top: 15px;">Deprem Yön Kuralı (TBDY 4.4.3)</h4>';
+            html += '<div class="info-box"><strong>İki Yönlü Deprem Kombinasyonları:</strong><br>1) E<sub>x</sub> + 0.3E<sub>y</sub><br>2) 0.3E<sub>x</sub> + E<sub>y</sub></div>';
+            html += '<div class="result-item"><span class="result-label">E<sub>x</sub> (Duvar normal)</span><span class="result-value">' + seismicResults.E_x.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">E<sub>y</sub> (Kanal ekseni)</span><span class="result-value">' + seismicResults.E_y.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Kombinasyon 1</span><span class="result-value">' + seismicResults.E_combo_1.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Kombinasyon 2</span><span class="result-value">' + seismicResults.E_combo_2.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Deprem Yükü</strong></span><span class="result-value success">' + seismicResults.E_tasarim.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="info-box">' + seismicResults.deprem_yon_bilgi + '</div>';
+
             // Deprem tasarım önerileri
             if (seismicResults.k_h > 0.25) {
                 html += '<div class="warning-box" style="margin-top: 20px;">';
@@ -2343,41 +2363,76 @@
             
             html = '<div class="info-box"><strong>TS 500 - Betonarme Yapıların Hesap ve Yapım Kuralları</strong></div>';
             
-            html += '<h4 style="color: #2a5298;">Malzeme Özellikleri</h4>';
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Malzeme Özellikleri</h4>';
             html += '<div class="result-item"><span class="result-label">Beton Basınç Dayanımı (f<sub>ck</sub>)</span><span class="result-value">' + structuralResults.fck + ' MPa</span></div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Basınç Dayanımı (f<sub>cd</sub>)</span><span class="result-value">' + structuralResults.fcd.toFixed(2) + ' MPa</span></div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Çekme Dayanımı (f<sub>ctd</sub>)</span><span class="result-value">' + structuralResults.fctd.toFixed(2) + ' MPa</span></div>';
             html += '<div class="result-item"><span class="result-label">Donatı Akma Dayanımı (f<sub>yk</sub>)</span><span class="result-value">' + structuralResults.fyk + ' MPa</span></div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Akma Dayanımı (f<sub>yd</sub>)</span><span class="result-value">' + structuralResults.fyd.toFixed(2) + ' MPa</span></div>';
-            
+            html += '<div class="result-item"><span class="result-label">Çevre Koşulları Sınıfı</span><span class="result-value">' + structuralResults.cevre_sinifi + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Minimum Beton Örtüsü (c<sub>nom</sub>)</span><span class="result-value">' + (structuralResults.c_nom * 1000).toFixed(0) + ' mm</span></div>';
+
             html += '<h4 style="margin-top: 20px; color: #2a5298;">Yük Kombinasyonları</h4>';
-            html += '<div class="formula-box"><strong>Statik:</strong> V<sub>d</sub> = 1.4G + 1.6H + 1.6Q</div>';
+            html += '<div class="result-item"><span class="result-label">Sürekli Yük (G)</span><span class="result-value">' + structuralResults.G.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hareketli Yük (Q)</span><span class="result-value">' + structuralResults.Q.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Su Basıncı (P<sub>w</sub>)</span><span class="result-value">' + structuralResults.P_w.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Deprem Yükü (E)</span><span class="result-value">' + structuralResults.E.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="formula-box"><strong>Statik:</strong> V<sub>d</sub> = 1.4G + 1.6Q</div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Statik)</span><span class="result-value">' + structuralResults.V_d_static.toFixed(2) + ' kN/m</span></div>';
-            html += '<div class="formula-box"><strong>Dinamik:</strong> V<sub>d</sub> = 1.0G + 1.0H + 1.0E</div>';
+            html += '<div class="formula-box"><strong>Dinamik:</strong> V<sub>d</sub> = 1.0G + 0.3Q + 1.0E</div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Dinamik)</span><span class="result-value">' + structuralResults.V_d_dynamic.toFixed(2) + ' kN/m</span></div>';
             html += '<div class="result-item"><span class="result-label"><strong>Maksimum Tasarım Yükü</strong></span><span class="result-value success">' + structuralResults.V_d_max.toFixed(2) + ' kN/m</span></div>';
-            
+
             html += '<h4 style="margin-top: 20px; color: #2a5298;">Perde Donatı Hesabı</h4>';
+            if (structuralResults.M_water && structuralResults.M_water > 0) {
+                html += '<div class="info-box">ℹ️ Kanal içi su basıncı momenti: ' + structuralResults.M_water.toFixed(2) + ' kNm/m (azaltıcı etki)</div>';
+            }
             html += '<div class="result-item"><span class="result-label">Tasarım Momenti (M<sub>d</sub>)</span><span class="result-value">' + structuralResults.M_d_perde.toFixed(2) + ' kNm/m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Gerekli Donatı Alanı (A<sub>s</sub>)</span><span class="result-value">' + (structuralResults.As_perde_gerekli * 10000).toFixed(2) + ' mm²/m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Minimum Donatı (TS 500 §12)</span><span class="result-value">' + (structuralResults.As_min_perde * 10000).toFixed(2) + ' mm²/m (0.0025A<sub>g</sub>/2)</span></div>';
-            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Donatısı</strong></span><span class="result-value success">' + (structuralResults.As_perde_tasarim * 10000).toFixed(2) + ' mm²/m</span></div>';
-            
+            html += '<div class="result-item"><span class="result-label">Faydalı Yükseklik (d)</span><span class="result-value">' + (structuralResults.d * 1000).toFixed(0) + ' mm</span></div>';
+            html += '<div class="result-item"><span class="result-label">Moment Katsayısı (μ)</span><span class="result-value">' + structuralResults.mu.toFixed(4) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Donatı Oranı (ω)</span><span class="result-value">' + structuralResults.omega.toFixed(4) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Maksimum ω (Sünek Göçme)</span><span class="result-value">' + structuralResults.omega_max.toFixed(4) + (structuralResults.sunek_gocme_uyari ? ' ⚠️' : ' ✓') + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Gerekli Donatı Alanı (A<sub>s</sub>)</span><span class="result-value">' + structuralResults.As_perde_gerekli.toFixed(2) + ' cm²/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Minimum Donatı (TS 500 §12)</span><span class="result-value">' + structuralResults.As_min_perde.toFixed(2) + ' cm²/m (0.0025A<sub>g</sub>/2)</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Donatısı</strong></span><span class="result-value success">' + structuralResults.As_perde_tasarim.toFixed(2) + ' cm²/m</span></div>';
+
+            if (structuralResults.sunek_gocme_uyari) {
+                html += '<div class="warning-box">⚠️ Sünek göçme limiti aşıldı! Kesit boyutları artırılmalı veya çift donatı kullanılmalı.</div>';
+            }
+
             html += '<div class="success-box">';
             html += '<strong>Seçilen Donatı:</strong><br>';
             html += 'Φ' + structuralResults.donati_capi + ' / ' + structuralResults.donati_araligi + ' mm<br>';
             html += '(' + structuralResults.donati_adet + ' adet/m, Her iki yüzde)<br>';
             html += 'Maksimum aralık: ' + structuralResults.s_max.toFixed(0) + ' mm ' + (structuralResults.aralık_ok ? '✓' : '✗');
             html += '</div>';
-            
-            html += '<h4 style="margin-top: 20px; color: #2a5298;">Kesme Güvenliği</h4>';
-            html += '<div class="formula-box"><strong>Beton Kesme Dayanımı:</strong> V<sub>cr</sub> = 0.65 × f<sub>ctd</sub> × b<sub>w</sub> × d</div>';
+
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Donatı Ankraj Boyu (TS 500 Madde 8.6)</h4>';
+            html += '<div class="result-item"><span class="result-label">Sıyrılma Gerilmesi (f<sub>bd</sub>)</span><span class="result-value">' + structuralResults.f_bd.toFixed(2) + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Gerekli Ankraj Boyu (l<sub>b</sub>)</span><span class="result-value">' + structuralResults.l_b_mm + ' mm</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Ankraj Kontrolü</strong></span><span class="result-value ' + (structuralResults.ankraj_ok ? 'success">✓ UYGUN' : 'danger">✗ UYGUN DEĞİL') + '</span></div>';
+            if (!structuralResults.ankraj_ok) {
+                html += '<div class="warning-box">⚠️ Temel genişliği ankraj boyu için yetersiz! Temel genişliğini artırın veya kancalı donatı kullanın.</div>';
+            }
+
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Kesme Güvenliği (TS 500 Madde 8.3)</h4>';
+            html += '<div class="formula-box"><strong>Etriyesiz Kesme Dayanımı:</strong> V<sub>cr</sub> = 0.65 × f<sub>ctd</sub> × b<sub>w</sub> × d</div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Kesme Kuvveti (V<sub>d</sub>)</span><span class="result-value">' + structuralResults.V_d_kesme.toFixed(2) + ' kN</span></div>';
             html += '<div class="result-item"><span class="result-label">Beton Kesme Kapasitesi (V<sub>cr</sub>)</span><span class="result-value">' + structuralResults.V_cr.toFixed(2) + ' kN</span></div>';
-            html += '<div class="result-item"><span class="result-label"><strong>Kesme Kontrolü</strong></span><span class="result-value ' + (structuralResults.kesme_ok ? 'success">V<sub>d</sub> ≤ V<sub>cr</sub> ✓ UYGUN' : 'danger">V<sub>d</sub> > V<sub>cr</sub> ✗ UYGUN DEĞİL') + '</span></div>';
-            
+            html += '<div class="result-item"><span class="result-label"><strong>Kesme Kontrolü</strong></span><span class="result-value ' + (structuralResults.kesme_ok ? 'success">V<sub>d</sub> ≤ V<sub>cr</sub> ✓ UYGUN' : 'danger">V<sub>d</sub> > V<sub>cr</sub> ✗ ETRİYE GEREKLİ') + '</span></div>';
+
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Çatlak Genişliği Kontrolü (TS 500 Madde 13.5)</h4>';
+            html += '<div class="result-item"><span class="result-label">Servis Momenti (M<sub>s</sub>)</span><span class="result-value">' + (geoResults.P_a * (geoResults.P_a_arm + inputs.TH) + geoResults.P_q * (geoResults.P_q_arm + inputs.TH)).toFixed(2) + ' kNm/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Donatı Gerilmesi (σ<sub>s</sub>)</span><span class="result-value">' + structuralResults.sigma_s_servis.toFixed(2) + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hesaplanan Çatlak Genişliği (w<sub>k</sub>)</span><span class="result-value">' + structuralResults.w_k.toFixed(3) + ' mm</span></div>';
+            html += '<div class="result-item"><span class="result-label">Limit Çatlak Genişliği (w<sub>k,max</sub>)</span><span class="result-value">' + structuralResults.w_k_max.toFixed(2) + ' mm</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Çatlak Kontrolü</strong></span><span class="result-value ' + (structuralResults.catlak_ok ? 'success">w<sub>k</sub> ≤ w<sub>k,max</sub> ✓ UYGUN' : 'danger">w<sub>k</sub> > w<sub>k,max</sub> ✗ UYGUN DEĞİL') + '</span></div>';
+            if (!structuralResults.catlak_ok) {
+                html += '<div class="warning-box">⚠️ Çatlak genişliği limiti aşıldı! Donatı çapını azaltın veya aralığı sıklaştırın.</div>';
+            }
+
             // Yapısal problemler için çözüm önerileri
-            if (!structuralResults.kesme_ok || !structuralResults.aralık_ok) {
+            if (!structuralResults.kesme_ok || !structuralResults.aralık_ok || !structuralResults.catlak_ok || !structuralResults.ankraj_ok) {
                 html += generateStructuralSolutions(inputs, structuralResults);
             }
             
