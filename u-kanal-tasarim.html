@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betonarme U-Kanal Tasarım Uygulaması</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 2px solid #ddd;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px 20px;
+            background: #f5f5f5;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            border-right: 1px solid #ddd;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #2a5298;
+            border-bottom: 3px solid #2a5298;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-section {
+            background: #f9f9f9;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2a5298;
+        }
+
+        .form-section h3 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section h3::before {
+            content: "▶";
+            margin-right: 10px;
+            font-size: 0.8em;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #2a5298;
+            box-shadow: 0 0 0 3px rgba(42, 82, 152, 0.1);
+        }
+
+        .unit {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            margin: 10px 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .results-section {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 20px;
+            border: 2px solid #2a5298;
+        }
+
+        .results-section h3 {
+            color: #2a5298;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 2px solid #2a5298;
+            padding-bottom: 10px;
+        }
+
+        .result-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .result-item:hover {
+            background: #f0f0f0;
+            transform: translateX(5px);
+        }
+
+        .result-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .result-value {
+            font-weight: 700;
+            color: #2a5298;
+            font-size: 1.1em;
+        }
+
+        .result-value.success {
+            color: #28a745;
+        }
+
+        .result-value.warning {
+            color: #ffc107;
+        }
+
+        .result-value.danger {
+            color: #dc3545;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: linear-gradient(135deg, #2a5298 0%, #1e3c72 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .formula-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .formula-box strong {
+            color: #856404;
+        }
+
+        .warning-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            color: #721c24;
+        }
+
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            color: #155724;
+        }
+
+        .info-box {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            color: #0c5460;
+        }
+
+        canvas {
+            max-width: 100%;
+            height: auto;
+            margin: 20px 0;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            background: white;
+        }
+
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 20px 0;
+        }
+
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .result-item {
+                flex-direction: column;
+                gap: 5px;
+            }
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2a5298;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .priority-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .priority-1 {
+            background: #dc3545;
+            color: white;
+        }
+
+        .priority-2 {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .priority-3 {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .solution-card {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #dc3545;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .solution-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(5px);
+        }
+
+        .effectiveness-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-left: 5px;
+        }
+
+        .effectiveness-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .effectiveness-very-high {
+            background: #28a745;
+            color: white;
+        }
+
+        .effectiveness-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .problem-summary {
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe5e5 100%);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border: 2px solid #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏗️ BETONARME U-KANAL TASARIM UYGULAMASI</h1>
+            <p>Hidrolik, Geoteknik, Yapısal Analiz ve Metraj Hesaplamaları - TBDY 2018 & TS 500</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="openTab(event, 'giris')">📋 Giriş Verileri</button>
+            <button class="tab" onclick="openTab(event, 'hidrolik')">💧 Hidrolik Hesaplar</button>
+            <button class="tab" onclick="openTab(event, 'geoteknik')">🏔️ Geoteknik Analiz</button>
+            <button class="tab" onclick="openTab(event, 'deprem')">🌊 Deprem Analizi</button>
+            <button class="tab" onclick="openTab(event, 'stabilite')">⚖️ Stabilite Kontrolü</button>
+            <button class="tab" onclick="openTab(event, 'yapisal')">🔧 Yapısal Tasarım</button>
+            <button class="tab" onclick="openTab(event, 'metraj')">📊 Metraj</button>
+            <button class="tab" onclick="openTab(event, 'rapor')">📄 Rapor</button>
+        </div>
+
+        <div class="content">
+            <!-- GİRİŞ VERİLERİ -->
+            <div id="giris" class="tab-content active">
+                <div class="form-section">
+                    <h3>Hidrolik Parametreler</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tasarım Taşkın Debisi (Q<sub>T</sub>)</label>
+                            <input type="number" id="Q_T" value="50.0" step="0.1">
+                            <span class="unit">m³/sn</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Kanal Genişliği (b)</label>
+                            <input type="number" id="b" value="5.0" step="0.1">
+                            <span class="unit">m</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Manning Katsayısı (n)</label>
+                            <input type="number" id="n" value="0.015" step="0.001">
+                            <span class="unit">Beton için</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Kanal Eğimi (S<sub>o</sub>)</label>
+                            <input type="number" id="So" value="0.001" step="0.0001">
+                            <span class="unit">m/m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Geometrik Parametreler</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Toplam Duvar Yüksekliği (H)</label>
+                            <input type="number" id="H" value="6.0" step="0.1">
+                            <span class="unit">m</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Temel Genişliği (B)</label>
+                            <input type="number" id="B" value="3.0" step="0.1">
+                            <span class="unit">m (≈0.5H)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Temel Kalınlığı (T<sub>H</sub>)</label>
+                            <input type="number" id="TH" value="0.6" step="0.05">
+                            <span class="unit">m (≈0.1H)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Perde Alt Kalınlığı (W<sub>alt</sub>)</label>
+                            <input type="number" id="W_alt" value="0.6" step="0.05">
+                            <span class="unit">m</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Perde Üst Kalınlığı (W<sub>üst</sub>)</label>
+                            <input type="number" id="W_ust" value="0.3" step="0.05">
+                            <span class="unit">m (min 0.25-0.30m)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Duvar Uzunluğu (L)</label>
+                            <input type="number" id="L" value="20.0" step="1">
+                            <span class="unit">m</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Zemin Parametreleri</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Zemin Birim Hacim Ağırlığı (γ)</label>
+                            <input type="number" id="gamma_zemin" value="18.0" step="0.1">
+                            <span class="unit">kN/m³</span>
+                        </div>
+                        <div class="form-group">
+                            <label>İçsel Sürtünme Açısı (φ)</label>
+                            <input type="number" id="phi" value="30" step="1">
+                            <span class="unit">derece</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Kohezyon (c)</label>
+                            <input type="number" id="c" value="0" step="1">
+                            <span class="unit">kPa</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Duvar Sürtünme Açısı (δ)</label>
+                            <input type="number" id="delta" value="20" step="1">
+                            <span class="unit">derece (≈2/3φ)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Sürşarj Yükü (q)</label>
+                            <input type="number" id="q" value="10" step="1">
+                            <span class="unit">kN/m²</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Zemin Taşıma Gücü (q<sub>ult</sub>)</label>
+                            <input type="number" id="q_ult" value="250" step="10">
+                            <span class="unit">kN/m²</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Deprem Parametreleri (TBDY 2018)</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>S<sub>DS</sub> (Kısa Periyot Spektral İvme)</label>
+                            <input type="number" id="SDS" value="0.8" step="0.05">
+                            <span class="unit">g (AFAD haritasından)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Yerel Zemin Sınıfı (TBDY Tablo 16.1)</label>
+                            <select id="zemin_sinifi">
+                                <option value="ZA">ZA - Sağlam, kırılmamış kayalar (F_s=0.8)</option>
+                                <option value="ZB">ZB - Az ayrışmış kayalar (F_s=0.9)</option>
+                                <option value="ZC" selected>ZC - Çok sıkı kum, çakıl, sert kil (F_s=1.3)</option>
+                                <option value="ZD">ZD - Orta sıkı-sıkı zemin (F_s=1.6)</option>
+                                <option value="ZE">ZE - Gevşek kum, yumuşak kil (F_s=2.4)</option>
+                            </select>
+                            <span class="unit">Zemin etüdüne göre</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Azaltma Katsayısı (r)</label>
+                            <input type="number" id="r" value="1.5" step="0.1">
+                            <span class="unit">Konsol: 2.0, Ankrajlı: 1.5</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Tasarım Yaklaşımı</label>
+                            <select id="tasarim_yaklasimi">
+                                <option value="TBDY" selected>TBDY 2018 (Karakteristik Değerler)</option>
+                                <option value="EC7_DA1">TS EN 1997-1 Yaklaşım DA1</option>
+                                <option value="EC7_DA2">TS EN 1997-1 Yaklaşım DA2</option>
+                            </select>
+                            <span class="unit">Geoteknik tasarım standardı</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Malzeme Özellikleri</h3>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Yapısal Tasarım Standardı</label>
+                            <select id="yapisal_standart">
+                                <option value="TS500" selected>TS 500:2000</option>
+                                <option value="EC2">TS EN 1992-1-1 (Eurocode 2)</option>
+                            </select>
+                            <span class="unit">Betonarme tasarım kodu</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Beton Sınıfı</label>
+                            <select id="beton_sinifi">
+                                <option value="C25">C25/30</option>
+                                <option value="C30" selected>C30/37</option>
+                                <option value="C35">C35/45</option>
+                                <option value="C40">C40/50</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Donatı Çeliği</label>
+                            <select id="donati_sinifi">
+                                <option value="B420C" selected>B420C</option>
+                                <option value="B500C">B500C</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Beton Birim Hacim Ağırlığı (γ<sub>c</sub>)</label>
+                            <input type="number" id="gamma_beton" value="25.0" step="0.1">
+                            <span class="unit">kN/m³</span>
+                        </div>
+                        <div class="form-group">
+                            <label>Su Birim Hacim Ağırlığı (γ<sub>w</sub>)</label>
+                            <input type="number" id="gamma_su" value="9.81" step="0.01">
+                            <span class="unit">kN/m³</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn" onclick="calculateAll()">🚀 Tüm Hesaplamaları Yap</button>
+                    <button class="btn btn-secondary" onclick="quickOptimize()">⚡ Hızlı Optimizasyon</button>
+                    <button class="btn btn-secondary" onclick="resetForm()">🔄 Sıfırla</button>
+                </div>
+            </div>
+
+            <!-- HİDROLİK HESAPLAR -->
+            <div id="hidrolik" class="tab-content">
+                <div class="results-section">
+                    <h3>💧 Hidrolik Hesaplama Sonuçları</h3>
+                    <div id="hidrolik-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- GEOTEKNİK ANALİZ -->
+            <div id="geoteknik" class="tab-content">
+                <div class="results-section">
+                    <h3>🏔️ Geoteknik Analiz Sonuçları</h3>
+                    <div id="geoteknik-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- DEPREM ANALİZİ -->
+            <div id="deprem" class="tab-content">
+                <div class="results-section">
+                    <h3>🌊 Deprem Etkisi (TBDY 2018)</h3>
+                    <div id="deprem-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- STABİLİTE KONTROLÜ -->
+            <div id="stabilite" class="tab-content">
+                <div class="results-section">
+                    <h3>⚖️ Stabilite Kontrol Sonuçları</h3>
+                    <div id="stabilite-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- YAPISAL TASARIM -->
+            <div id="yapisal" class="tab-content">
+                <div class="results-section">
+                    <h3>🔧 Yapısal Tasarım ve Donatı Hesabı (TS 500)</h3>
+                    <div id="yapisal-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- METRAJ -->
+            <div id="metraj" class="tab-content">
+                <div class="results-section">
+                    <h3>📊 Metraj Hesaplamaları</h3>
+                    <div id="metraj-sonuc"></div>
+                </div>
+            </div>
+
+            <!-- RAPOR -->
+            <div id="rapor" class="tab-content">
+                <div class="results-section">
+                    <h3>📄 Teknik Hesap Raporu</h3>
+                    <div id="rapor-sonuc"></div>
+                    <div class="button-group">
+                        <button class="btn" onclick="printReport()">🖨️ Raporu Yazdır</button>
+                        <button class="btn btn-secondary" onclick="exportToExcel()">📊 Excel'e Aktar</button>
+                        <button class="btn btn-secondary" onclick="saveCurrentDesign()">💾 Tasarımı Kaydet</button>
+                        <button class="btn btn-secondary" onclick="compareDesigns()">🔄 Tasarımları Karşılaştır</button>
+                    </div>
+                    <div id="comparison-area"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let calculationResults = {};
+        let savedDesign = null;
+
+        function openTab(evt, tabName) {
+            const tabContents = document.getElementsByClassName('tab-content');
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+
+            const tabs = document.getElementsByClassName('tab');
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function getInputValues() {
+            return {
+                // Hidrolik
+                Q_T: parseFloat(document.getElementById('Q_T').value),
+                b: parseFloat(document.getElementById('b').value),
+                n: parseFloat(document.getElementById('n').value),
+                So: parseFloat(document.getElementById('So').value),
+                
+                // Geometri
+                H: parseFloat(document.getElementById('H').value),
+                B: parseFloat(document.getElementById('B').value),
+                TH: parseFloat(document.getElementById('TH').value),
+                W_alt: parseFloat(document.getElementById('W_alt').value),
+                W_ust: parseFloat(document.getElementById('W_ust').value),
+                L: parseFloat(document.getElementById('L').value),
+                
+                // Zemin
+                gamma_zemin: parseFloat(document.getElementById('gamma_zemin').value),
+                phi: parseFloat(document.getElementById('phi').value),
+                c: parseFloat(document.getElementById('c').value),
+                delta: parseFloat(document.getElementById('delta').value),
+                q: parseFloat(document.getElementById('q').value),
+                q_ult: parseFloat(document.getElementById('q_ult').value),
+                
+                // Deprem
+                SDS: parseFloat(document.getElementById('SDS').value),
+                zemin_sinifi: document.getElementById('zemin_sinifi').value,
+                r: parseFloat(document.getElementById('r').value),
+                tasarim_yaklasimi: document.getElementById('tasarim_yaklasimi').value,
+                
+                // Malzeme
+                yapisal_standart: document.getElementById('yapisal_standart').value,
+                beton_sinifi: document.getElementById('beton_sinifi').value,
+                gamma_beton: parseFloat(document.getElementById('gamma_beton').value),
+                gamma_su: parseFloat(document.getElementById('gamma_su').value)
+            };
+        }
+
+        function calculateHydraulics(inputs) {
+            const results = {};
+            
+            // Manning denklemi ile iteratif su derinliği hesabı
+            let h_su = 2.0; // Başlangıç tahmini
+            let tolerance = 0.001;
+            let maxIter = 100;
+            
+            for (let i = 0; i < maxIter; i++) {
+                const A = inputs.b * h_su;
+                const P = inputs.b + 2 * h_su;
+                const R_h = A / P;
+                const V = (1 / inputs.n) * Math.pow(R_h, 2/3) * Math.pow(inputs.So, 1/2);
+                const Q_calc = A * V;
+                
+                const error = Math.abs(Q_calc - inputs.Q_T);
+                if (error < tolerance) {
+                    results.h_su = h_su;
+                    results.V = V;
+                    results.A = A;
+                    results.R_h = R_h;
+                    results.P = P;
+                    break;
+                }
+                
+                // Newton-Raphson yaklaşımı
+                h_su = h_su + (inputs.Q_T - Q_calc) / (inputs.b * V);
+            }
+            
+            // Hava payı (Freeboard)
+            results.H_p = Math.max(0.3, 0.1 * results.h_su);
+            results.H_h = results.h_su + results.H_p;
+            
+            // Froude sayısı
+            results.Fr = results.V / Math.sqrt(9.81 * results.h_su);
+            results.flow_type = results.Fr < 1 ? "Kritik Altı (Sakin)" : results.Fr > 1 ? "Kritik Üstü (Hızlı)" : "Kritik";
+            
+            // Hidrostatik basınç
+            results.P_w = 0.5 * inputs.gamma_su * Math.pow(results.h_su, 2);
+            
+            return results;
+        }
+
+        function calculateBearingCapacity(inputs, e) {
+            const phi_rad = inputs.phi * Math.PI / 180;
+            const results = {};
+            
+            // Taşıma gücü katsayıları (Terzaghi-Meyerhof)
+            const N_q = Math.exp(Math.PI * Math.tan(phi_rad)) * 
+                        Math.pow(Math.tan(Math.PI/4 + phi_rad/2), 2);
+            const N_c = (N_q - 1) / Math.tan(phi_rad);
+            const N_gamma = 2 * (N_q + 1) * Math.tan(phi_rad);
+            
+            results.N_q = N_q;
+            results.N_c = N_c;
+            results.N_gamma = N_gamma;
+            
+            // Şekil faktörleri (Dikdörtgen temel, uzun duvar)
+            const B_eff = inputs.B - 2 * Math.abs(e);
+            const s_c = 1.0;  // Uzun temel
+            const s_q = 1.0;
+            const s_gamma = 0.6;
+            
+            // Derinlik faktörleri
+            const D_B_ratio = inputs.TH / B_eff;
+            const d_c = 1.0 + 0.4 * Math.min(D_B_ratio, 1.0);
+            const d_q = 1.0 + 2 * Math.tan(phi_rad) * 
+                        Math.pow(1 - Math.sin(phi_rad), 2) * Math.min(D_B_ratio, 1.0);
+            const d_gamma = 1.0;
+            
+            // Eğim faktörleri (basitleştirilmiş - yatay yük etkisi ihmal edilebilir)
+            const i_c = 1.0;
+            const i_q = 1.0;
+            const i_gamma = 1.0;
+            
+            // Taşıma gücü hesabı
+            const q_temel = inputs.gamma_zemin * inputs.TH; // Temel seviyesindeki düşey gerilme
+            
+            const q_ult_hesaplanan = 
+                inputs.c * N_c * s_c * d_c * i_c + 
+                q_temel * N_q * s_q * d_q * i_q +
+                0.5 * inputs.gamma_zemin * B_eff * N_gamma * s_gamma * d_gamma * i_gamma;
+            
+            results.B_eff = B_eff;
+            results.q_ult_hesaplanan = q_ult_hesaplanan;
+            results.s_c = s_c;
+            results.s_q = s_q;
+            results.s_gamma = s_gamma;
+            results.d_c = d_c;
+            results.d_q = d_q;
+            results.d_gamma = d_gamma;
+            
+            return results;
+        }
+
+        function calculateGeotechnics(inputs) {
+            const results = {};
+            
+            // Aktif toprak basıncı katsayısı (Rankine)
+            const phi_rad = inputs.phi * Math.PI / 180;
+            results.K_a = Math.pow(Math.tan(Math.PI/4 - phi_rad/2), 2);
+            
+            // Pasif toprak basıncı katsayısı
+            results.K_p = Math.pow(Math.tan(Math.PI/4 + phi_rad/2), 2);
+            
+            // Statik aktif toprak itkisi
+            results.P_a = 0.5 * inputs.gamma_zemin * Math.pow(inputs.H, 2) * results.K_a;
+            results.P_a_arm = inputs.H / 3;
+            
+            // Sürşarj itkisi
+            results.P_q = inputs.q * inputs.H * results.K_a;
+            results.P_q_arm = inputs.H / 2;
+            
+            // Toplam yatay itki (statik)
+            results.P_h_static = results.P_a + results.P_q;
+            
+            // Ağırlıklar hesabı
+            const W_ort = (inputs.W_alt + inputs.W_ust) / 2;
+            const H_perde = inputs.H - inputs.TH;
+            
+            // Temel ağırlığı
+            results.W_temel = inputs.gamma_beton * inputs.B * inputs.TH;
+            
+            // Perde ağırlığı
+            results.W_perde = inputs.gamma_beton * W_ort * H_perde;
+            
+            // Topuk üstü zemin ağırlığı
+            const L_topuk = inputs.B - inputs.W_alt - 0.5; // Yaklaşık topuk uzunluğu
+            results.W_zemin = inputs.gamma_zemin * L_topuk * H_perde;
+            
+            // Toplam düşey yük
+            results.V_total = results.W_temel + results.W_perde + results.W_zemin;
+            
+            return results;
+        }
+
+        function calculateSeismic(inputs, geoResults) {
+            const results = {};
+            
+            // TBDY 2018 Tablo 16.1 - Zemin sınıfı katsayıları
+            const F_s_values = {
+                'ZA': 0.8,
+                'ZB': 0.9,
+                'ZC': 1.3,
+                'ZD': 1.6,
+                'ZE': 2.4
+            };
+            
+            const F_s = F_s_values[inputs.zemin_sinifi];
+            results.F_s = F_s;
+            
+            // Zemin sınıfına göre düzeltilmiş spektral ivme
+            const S_DS_zemin = inputs.SDS * F_s;
+            results.S_DS_zemin = S_DS_zemin;
+            
+            // Yatay deprem katsayısı (TBDY 2018 Madde 16.5.2)
+            results.k_h = 0.4 * S_DS_zemin / inputs.r;
+            
+            // Düşey deprem katsayısı (TBDY 2018 Madde 16.5.3)
+            results.k_v = (2/3) * results.k_h;  // Daha doğru formül
+            
+            // Tam Mononobe-Okabe formülü (TBDY 2018 Madde 16.5.5)
+            const phi_rad = inputs.phi * Math.PI / 180;
+            const delta_rad = inputs.delta * Math.PI / 180;
+            const beta = 0; // Duvar düşey kabulu
+            const i = 0; // Dolgu yüzeyi yatay kabulu
+            
+            const theta = Math.atan(results.k_h / (1 - results.k_v));
+            results.theta = theta * 180 / Math.PI;
+            
+            // Tam TBDY formülü
+            const cos_phi_theta_beta = Math.cos(phi_rad - theta - beta);
+            const cos_theta = Math.cos(theta);
+            const cos_beta = Math.cos(beta);
+            const cos_delta_beta_theta = Math.cos(delta_rad + beta + theta);
+            const cos_i_beta = Math.cos(i - beta);
+            
+            const numerator = Math.pow(cos_phi_theta_beta, 2);
+            
+            const sin_phi_delta = Math.sin(phi_rad + delta_rad);
+            const sin_phi_theta_i = Math.sin(phi_rad - theta - i);
+            
+            let sqrt_term = 0;
+            if (cos_delta_beta_theta > 0 && cos_i_beta > 0) {
+                const inner = (sin_phi_delta * sin_phi_theta_i) / 
+                             (cos_delta_beta_theta * cos_i_beta);
+                if (inner >= 0) {
+                    sqrt_term = Math.sqrt(inner);
+                }
+            }
+            
+            const denominator = cos_theta * Math.pow(cos_beta, 2) * 
+                               cos_delta_beta_theta * Math.pow(1 + sqrt_term, 2);
+            
+            results.K_ae = numerator / denominator;
+            
+            // k_v'nin iki durumu için kontrol (1-k_v ve 1+k_v)
+            // Daha kritik olan 1-k_v kullanılır
+            const factor_kv = 1 - results.k_v;
+            
+            // Toplam dinamik itki (TBDY 2018 Denklem 16.23)
+            results.P_t = results.K_ae * factor_kv * 
+                         (0.5 * inputs.gamma_zemin * Math.pow(inputs.H, 2) + 
+                          inputs.q * inputs.H);
+            
+            // Dinamik itki artışı
+            results.Delta_P = results.P_t - geoResults.P_h_static;
+            results.P_t_arm = inputs.H / 2; // Dinamik bileşke ortada (TBDY)
+            
+            // Alternatif: 1+k_v durumu (karşılaştırma için)
+            const P_t_alt = results.K_ae * (1 + results.k_v) * 
+                           (0.5 * inputs.gamma_zemin * Math.pow(inputs.H, 2) + 
+                            inputs.q * inputs.H);
+            results.P_t_alternatif = P_t_alt;
+            
+            // Daha kritik olanı kullan
+            if (P_t_alt > results.P_t) {
+                results.P_t = P_t_alt;
+                results.Delta_P = results.P_t - geoResults.P_h_static;
+                results.kv_durum = '(1+k_v) kullanıldı';
+            } else {
+                results.kv_durum = '(1-k_v) kullanıldı';
+            }
+            
+            return results;
+        }
+
+        function calculateStability(inputs, geoResults, seismicResults) {
+            const results = {};
+            
+            // STATIK KONTROLLER
+            
+            // 1. Devrilme kontrolü
+            const M_R_static = geoResults.W_temel * (inputs.B / 2) + 
+                              geoResults.W_perde * (inputs.W_alt / 2) + 
+                              geoResults.W_zemin * (inputs.B - inputs.W_alt / 2);
+            
+            const M_D_static = geoResults.P_a * geoResults.P_a_arm + 
+                              geoResults.P_q * geoResults.P_q_arm;
+            
+            results.M_R_static = M_R_static;
+            results.M_D_static = M_D_static;
+            results.GS_devrilme_static = M_R_static / M_D_static;
+            results.devrilme_static_ok = results.GS_devrilme_static >= 2.0;
+            
+            // 2. Kayma kontrolü (Pasif direnç dahil - TBDY 16.6.2)
+            const delta_rad = inputs.delta * Math.PI / 180;
+            const F_R_static = geoResults.V_total * Math.tan(delta_rad) + 
+                              inputs.c * inputs.B * 1000;
+            
+            // Pasif toprak direnci (güvenli taraf için %50'si - Terzaghi önerisi)
+            const H_passive = inputs.TH; // Temel önü yüksekliği
+            const P_p = 0.5 * 0.5 * inputs.gamma_zemin * 
+                       Math.pow(H_passive, 2) * geoResults.K_p;
+            
+            results.P_p = P_p;
+            results.F_R_static_without_Pp = F_R_static;
+            results.F_R_static = F_R_static + P_p;
+            
+            const F_D_static = geoResults.P_h_static;
+            
+            results.GS_kayma_static = results.F_R_static / F_D_static;
+            results.kayma_static_ok = results.GS_kayma_static >= 1.5;
+            
+            // 3. Taşıma gücü kontrolü
+            const e_static = (M_R_static - M_D_static) / geoResults.V_total;
+            results.e_static = e_static;
+            results.e_B_orani_static = e_static / inputs.B;
+            results.eksantrisite_static_ok = Math.abs(e_static) < inputs.B / 6;
+            
+            // Taşıma gücü hesaplama
+            const bearingResults = calculateBearingCapacity(inputs, e_static);
+            results.bearing = bearingResults;
+            
+            const B_eff = bearingResults.B_eff;
+            const q_max_static = (geoResults.V_total / B_eff) * 
+                                (1 + 6 * Math.abs(e_static) / inputs.B);
+            
+            results.q_max_static = q_max_static;
+            results.q_ult_hesaplanan = bearingResults.q_ult_hesaplanan;
+            
+            // Kullanıcı girişi ile hesaplanan değer karşılaştırması
+            results.q_ult_kullanici = inputs.q_ult;
+            results.q_ult_kullanim = Math.min(inputs.q_ult, bearingResults.q_ult_hesaplanan);
+            
+            results.GS_tasima_static = results.q_ult_kullanim / q_max_static;
+            results.tasima_static_ok = results.GS_tasima_static >= 2.5;
+            
+            // DİNAMİK KONTROLLER
+            
+            // 1. Devrilme kontrolü (dinamik)
+            const M_D_dynamic = geoResults.P_a * geoResults.P_a_arm + 
+                               geoResults.P_q * geoResults.P_q_arm +
+                               seismicResults.Delta_P * seismicResults.P_t_arm;
+            
+            results.M_D_dynamic = M_D_dynamic;
+            results.GS_devrilme_dynamic = M_R_static / M_D_dynamic;
+            
+            // TBDY 2018 - dinamik için 1.3-1.5 arası
+            const min_GS_devrilme_dynamic = inputs.tasarim_yaklasimi === 'TBDY' ? 1.3 : 1.4;
+            results.min_GS_devrilme_dynamic = min_GS_devrilme_dynamic;
+            results.devrilme_dynamic_ok = results.GS_devrilme_dynamic >= min_GS_devrilme_dynamic;
+            
+            // 2. Kayma kontrolü (dinamik)
+            const F_D_dynamic = seismicResults.P_t;
+            results.GS_kayma_dynamic = results.F_R_static / F_D_dynamic;
+            results.kayma_dynamic_ok = results.GS_kayma_dynamic >= 1.1;
+            
+            // 3. Taşıma gücü kontrolü (dinamik)
+            const e_dynamic = (M_R_static - M_D_dynamic) / geoResults.V_total;
+            results.e_dynamic = e_dynamic;
+            results.e_B_orani_dynamic = e_dynamic / inputs.B;
+            results.eksantrisite_dynamic_ok = Math.abs(e_dynamic) < inputs.B / 6;
+            
+            const bearingResultsDynamic = calculateBearingCapacity(inputs, e_dynamic);
+            const B_eff_dynamic = bearingResultsDynamic.B_eff;
+            
+            const q_max_dynamic = (geoResults.V_total / B_eff_dynamic) * 
+                                 (1 + 6 * Math.abs(e_dynamic) / inputs.B);
+            results.q_max_dynamic = q_max_dynamic;
+            results.GS_tasima_dynamic = results.q_ult_kullanim / q_max_dynamic;
+            results.tasima_dynamic_ok = results.GS_tasima_dynamic >= 1.0;
+            
+            // Genel değerlendirme
+            results.tum_kontroller_ok = results.devrilme_static_ok && 
+                                       results.kayma_static_ok && 
+                                       results.tasima_static_ok &&
+                                       results.eksantrisite_static_ok &&
+                                       results.devrilme_dynamic_ok &&
+                                       results.kayma_dynamic_ok &&
+                                       results.tasima_dynamic_ok &&
+                                       results.eksantrisite_dynamic_ok;
+            
+            return results;
+        }
+
+        function calculateStructural(inputs, geoResults, seismicResults) {
+            const results = {};
+            
+            // Malzeme özellikleri - Standarda göre
+            const fck_values = {
+                'C25': 25, 'C30': 30, 'C35': 35, 'C40': 40
+            };
+            const fck = fck_values[inputs.beton_sinifi];
+            
+            if (inputs.yapisal_standart === 'TS500') {
+                // TS 500:2000
+                results.fcd = fck / 1.5;
+                results.fctd = 0.21 * Math.pow(fck, 2/3) / 1.5;
+                results.standart = 'TS 500:2000';
+            } else {
+                // TS EN 1992-1-1 (Eurocode 2)
+                const alpha_cc = 0.85; // Uzun dönem etki
+                const gamma_c = 1.5;
+                
+                // fctk tablosu (basitleştirilmiş)
+                const fctk_005_values = {
+                    25: 1.8, 30: 2.0, 35: 2.2, 40: 2.5
+                };
+                const fctk_005 = fctk_005_values[fck] || 2.0;
+                const alpha_ct = 1.0;
+                
+                results.fcd = alpha_cc * fck / gamma_c;
+                results.fctd = alpha_ct * fctk_005 / gamma_c;
+                results.standart = 'TS EN 1992-1-1 (EC2)';
+            }
+            
+            // Donatı özellikleri
+            const fyk = inputs.donati_sinifi === 'B420C' ? 420 : 500;
+            const fyd = fyk / 1.15;
+            
+            results.fck = fck;
+            results.fyk = fyk;
+            results.fyd = fyd;
+            
+            // DOĞRU YÜK AYIRIMI (KRİTİK DÜZELTME!)
+            // Sürekli yükler (G - Dead Load)
+            const G = geoResults.W_temel + geoResults.W_perde + geoResults.W_zemin;
+            
+            // Hareketli yükler (Q - Live Load) - Toprak itkisi değişken yük
+            const Q = geoResults.P_a + geoResults.P_q;
+            
+            // Deprem yükü (E - Earthquake)
+            const E = seismicResults.Delta_P;
+            
+            results.G = G;
+            results.Q = Q;
+            results.E = E;
+            
+            // Yük kombinasyonları (DÜZELTME!)
+            let V_d_static, V_d_earthquake;
+            
+            if (inputs.yapisal_standart === 'TS500') {
+                // TS 500 - Tablo 7.1
+                V_d_static = 1.4 * G + 1.6 * Q;  // Sürekli durum
+                V_d_earthquake = 1.0 * G + 0.3 * Q + 1.0 * E;  // Deprem durumu
+            } else {
+                // EC2 / TBDY
+                V_d_static = 1.35 * G + 1.5 * Q;  // STR/GEO
+                V_d_earthquake = 1.0 * G + 0.3 * Q + 1.0 * E;  // Kazara (Deprem)
+            }
+            
+            results.V_d_static = V_d_static;
+            results.V_d_earthquake = V_d_earthquake;
+            results.V_d_max = Math.max(V_d_static, V_d_earthquake);
+            
+            // Perde dibi momenti (kritik kesit)
+            const H_perde = inputs.H - inputs.TH;
+            
+            // Moment hesabı - Doğru yük kombinasyonları ile
+            const M_static_G = 0; // Düşey yüklerin momenti ihmal edilebilir
+            const M_static_Q = geoResults.P_a * (geoResults.P_a_arm + inputs.TH) +
+                               geoResults.P_q * (geoResults.P_q_arm + inputs.TH);
+            const M_earthquake = M_static_Q + E * seismicResults.P_t_arm;
+            
+            let M_d_perde;
+            if (inputs.yapisal_standart === 'TS500') {
+                M_d_perde = 1.6 * M_static_Q;  // Statik durum kritik
+                const M_d_earthquake = 1.0 * M_earthquake;
+                M_d_perde = Math.max(M_d_perde, M_d_earthquake);
+            } else {
+                M_d_perde = 1.5 * M_static_Q;
+                const M_d_earthquake = 1.0 * M_earthquake;
+                M_d_perde = Math.max(M_d_perde, M_d_earthquake);
+            }
+            
+            results.M_d_perde = M_d_perde;
+            
+            // Gerekli donatı alanı
+            const d = inputs.W_alt - 0.05; // Faydalı yükseklik (5cm örtü)
+            const mu = M_d_perde / (1.0 * Math.pow(d, 2) * results.fcd * 1000); // 1m genişlik
+            
+            let omega;
+            if (mu < 0.295) {
+                omega = 0.85 * (1 - Math.sqrt(1 - 2 * mu / 0.85));
+            } else {
+                omega = 0.295; // Maksimum donatı oranı
+            }
+            
+            const As_perde = omega * results.fcd * 1000 * d / results.fyd;
+            
+            results.As_perde_gerekli = As_perde;
+            results.mu = mu;
+            results.omega = omega;
+            results.d = d;
+            
+            // Minimum donatı kontrolü (TS 500 §12)
+            const Ag_perde = inputs.W_alt * 1000; // mm² (1m genişlik)
+            const As_min = 0.0025 * Ag_perde / 2; // Her yüz için
+            
+            results.As_min_perde = As_min;
+            results.As_perde_tasarim = Math.max(As_perde, As_min);
+            
+            // Donatı seçimi (Φ16 için)
+            const As_fi16 = Math.PI * Math.pow(16, 2) / 4;
+            const n_fi16 = Math.ceil(results.As_perde_tasarim / As_fi16);
+            const s_fi16 = 1000 / n_fi16; // mm
+            
+            results.donati_capi = 16;
+            results.donati_adet = n_fi16;
+            results.donati_araligi = Math.round(s_fi16);
+            
+            // Minimum aralık kontrolü (max 300mm veya 1.5*kalınlık)
+            const s_max = Math.min(300, 1.5 * inputs.W_alt * 1000);
+            results.s_max = s_max;
+            results.aralık_ok = results.donati_araligi <= s_max;
+            
+            // Kesme kontrolü (Normal kuvvet etkisi dahil - DÜZELTME!)
+            const V_d_kesme_static = 1.6 * geoResults.P_h_static;
+            const V_d_kesme_earthquake = 1.0 * seismicResults.P_t;
+            const V_d_kesme = Math.max(V_d_kesme_static, V_d_kesme_earthquake);
+            
+            // Normal kuvvet etkisi (basınç olumlu etki)
+            const N_d = 0.9 * G / 1.0; // Metre başına, güvenli taraf için %90
+            const A_g = inputs.W_alt * 1000; // mm²
+            
+            let V_cr;
+            if (inputs.yapisal_standart === 'TS500') {
+                // TS 500 formülü - Normal kuvvet etkisi dahil
+                V_cr = 0.65 * results.fctd * inputs.W_alt * d * 
+                       Math.sqrt(1 + 0.07 * (N_d / (A_g / 1000)));
+            } else {
+                // EC2 formülü (basitleştirilmiş)
+                const C_Rd_c = 0.18 / 1.5;
+                const k = Math.min(1 + Math.sqrt(200 / (d * 1000)), 2.0);
+                const rho_l = Math.min(results.As_perde_tasarim / (inputs.W_alt * d * 1000), 0.02);
+                
+                V_cr = C_Rd_c * k * Math.pow(100 * rho_l * fck, 1/3) * 
+                       inputs.W_alt * d * 1000 / 1000;
+            }
+            
+            results.V_d_kesme = V_d_kesme;
+            results.V_cr = V_cr;
+            results.N_d = N_d;
+            results.kesme_ok = V_d_kesme <= V_cr;
+            
+            return results;
+        }
+
+        function generateSolutionSuggestions(inputs, stabilityResults, geoResults) {
+            let html = '<div class="warning-box" style="margin-top: 20px;">';
+            html += '<h4 style="color: #721c24; margin-bottom: 15px;">🔧 PROBLEM ANALİZİ VE ÇÖZÜM ÖNERİLERİ</h4>';
+            
+            const problems = [];
+            const solutions = [];
+            
+            // STATİK KONTROLLER
+            if (!stabilityResults.devrilme_static_ok) {
+                problems.push({
+                    type: 'Devrilme (Statik)',
+                    current: stabilityResults.GS_devrilme_static.toFixed(2),
+                    required: '2.0',
+                    severity: 'high'
+                });
+                
+                const eksiklik = ((2.0 / stabilityResults.GS_devrilme_static) - 1) * 100;
+                solutions.push({
+                    problem: 'Devrilme Güvenliği Yetersiz (Statik)',
+                    icon: '⚠️',
+                    solutions: [
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.2).toFixed(2) + ' m',
+                            description: 'Temel genişliği yaklaşık %' + eksiklik.toFixed(0) + ' artırılmalı. Daha geniş temel, moment kolunu artırır.',
+                            priority: 1,
+                            effectiveness: 'Yüksek',
+                            action: 'increase_B'
+                        },
+                        {
+                            title: 'Topuk Uzunluğunu Artır',
+                            description: 'Topuk plağını uzatarak üzerindeki zemin ağırlığını artırın.',
+                            priority: 2,
+                            effectiveness: 'Yüksek'
+                        },
+                        {
+                            title: 'Perde Kalınlığını Azalt',
+                            current: inputs.W_alt.toFixed(2) + ' m',
+                            suggested: Math.max(0.3, inputs.W_alt * 0.9).toFixed(2) + ' m',
+                            description: 'Perde kalınlığı azaltılarak moment kolu iyileştirilebilir (minimum 30 cm).',
+                            priority: 3,
+                            effectiveness: 'Orta'
+                        }
+                    ]
+                });
+            }
+            
+            if (!stabilityResults.kayma_static_ok) {
+                problems.push({
+                    type: 'Kayma (Statik)',
+                    current: stabilityResults.GS_kayma_static.toFixed(2),
+                    required: '1.5',
+                    severity: 'high'
+                });
+                
+                const eksiklik = ((1.5 / stabilityResults.GS_kayma_static) - 1) * 100;
+                solutions.push({
+                    problem: 'Kayma Güvenliği Yetersiz (Statik)',
+                    icon: '⚠️',
+                    solutions: [
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.15).toFixed(2) + ' m',
+                            description: 'Daha geniş temel, daha fazla düşey yük ve dolayısıyla daha fazla sürtünme direnci sağlar.',
+                            priority: 1,
+                            effectiveness: 'Yüksek',
+                            action: 'increase_B'
+                        },
+                        {
+                            title: 'Temel Diş (Shear Key) Ekle',
+                            description: 'Temel tabanına 40-60 cm derinliğinde, 30-40 cm kalınlığında pasif direnç dişi ekleyin.',
+                            priority: 1,
+                            effectiveness: 'Çok Yüksek'
+                        },
+                        {
+                            title: 'Zemini İyileştir',
+                            current: 'φ = ' + inputs.phi + '°',
+                            suggested: 'φ > ' + (inputs.phi + 5) + '°',
+                            description: 'Temel altı zemini daha iyi drenajlı malzeme ile değiştirin.',
+                            priority: 2,
+                            effectiveness: 'Yüksek'
+                        }
+                    ]
+                });
+            }
+            
+            if (!stabilityResults.eksantrisite_static_ok) {
+                problems.push({
+                    type: 'Eksantrisite (Statik)',
+                    current: stabilityResults.e_B_orani_static.toFixed(3),
+                    required: '< 0.167',
+                    severity: 'medium'
+                });
+                
+                solutions.push({
+                    problem: 'Eksantrisite Limiti Aşıldı (Statik)',
+                    icon: '⚡',
+                    solutions: [
+                        {
+                            title: 'Temeli Yeniden Konumlandır',
+                            description: 'Temelin burun-topuk oranını değiştirerek bileşke kuvvetin merkeze yaklaşmasını sağlayın.',
+                            priority: 1,
+                            effectiveness: 'Yüksek'
+                        },
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.1).toFixed(2) + ' m',
+                            description: 'Daha geniş temel, aynı eksantrisite için daha düşük e/B oranı verir.',
+                            priority: 2,
+                            effectiveness: 'Orta',
+                            action: 'increase_B'
+                        }
+                    ]
+                });
+            }
+            
+            if (!stabilityResults.tasima_static_ok) {
+                problems.push({
+                    type: 'Taşıma Gücü (Statik)',
+                    current: stabilityResults.GS_tasima_static.toFixed(2),
+                    required: '2.5',
+                    severity: 'high'
+                });
+                
+                const eksiklik = ((2.5 / stabilityResults.GS_tasima_static) - 1) * 100;
+                solutions.push({
+                    problem: 'Taşıma Gücü Yetersiz (Statik)',
+                    icon: '🚨',
+                    solutions: [
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.2).toFixed(2) + ' m',
+                            description: 'Daha geniş temel, temas gerilmesini azaltır (q = V/B).',
+                            priority: 1,
+                            effectiveness: 'Çok Yüksek',
+                            action: 'increase_B'
+                        },
+                        {
+                            title: 'Temel Derinliğini Artır',
+                            description: 'Daha derin temelde zemin taşıma gücü artar.',
+                            priority: 2,
+                            effectiveness: 'Yüksek'
+                        },
+                        {
+                            title: 'Zemin İyileştirmesi',
+                            current: 'q_ult = ' + inputs.q_ult + ' kN/m²',
+                            suggested: 'q_ult > ' + (stabilityResults.q_max_static * 2.5).toFixed(0) + ' kN/m²',
+                            description: 'Zemin iyileştirme (jet grout, yer değiştirme, vb.) veya kazık sistemi düşünün.',
+                            priority: 3,
+                            effectiveness: 'Çok Yüksek'
+                        }
+                    ]
+                });
+            }
+            
+            // DİNAMİK KONTROLLER
+            if (!stabilityResults.devrilme_dynamic_ok) {
+                problems.push({
+                    type: 'Devrilme (Dinamik)',
+                    current: stabilityResults.GS_devrilme_dynamic.toFixed(2),
+                    required: '1.3',
+                    severity: 'high'
+                });
+                
+                solutions.push({
+                    problem: 'Devrilme Güvenliği Yetersiz (Deprem)',
+                    icon: '🌊',
+                    solutions: [
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.15).toFixed(2) + ' m',
+                            description: 'Deprem durumunda karşı koyan momentleri artırır.',
+                            priority: 1,
+                            effectiveness: 'Yüksek',
+                            action: 'increase_B'
+                        },
+                        {
+                            title: 'Geri Dolgu Ağırlığını Azalt',
+                            current: 'γ = ' + inputs.gamma_zemin + ' kN/m³',
+                            suggested: 'γ ≈ ' + (inputs.gamma_zemin * 0.85).toFixed(1) + ' kN/m³',
+                            description: 'Hafif agrega veya geogrid kullanarak geri dolgu ağırlığını azaltın.',
+                            priority: 2,
+                            effectiveness: 'Orta'
+                        }
+                    ]
+                });
+            }
+            
+            if (!stabilityResults.kayma_dynamic_ok) {
+                problems.push({
+                    type: 'Kayma (Dinamik)',
+                    current: stabilityResults.GS_kayma_dynamic.toFixed(2),
+                    required: '1.1',
+                    severity: 'high'
+                });
+                
+                solutions.push({
+                    problem: 'Kayma Güvenliği Yetersiz (Deprem)',
+                    icon: '🌊',
+                    solutions: [
+                        {
+                            title: 'Temel Diş (Shear Key) Ekle - ÖNEMLİ!',
+                            description: 'Deprem durumunda kayma için en etkili çözüm. 50-70 cm derinliğinde temel dişi ekleyin.',
+                            priority: 1,
+                            effectiveness: 'Çok Yüksek'
+                        },
+                        {
+                            title: 'Temel Genişliğini Artır',
+                            current: inputs.B.toFixed(2) + ' m',
+                            suggested: (inputs.B * 1.1).toFixed(2) + ' m',
+                            description: 'Düşey yükü ve sürtünme direncini artırır.',
+                            priority: 2,
+                            effectiveness: 'Yüksek',
+                            action: 'increase_B'
+                        }
+                    ]
+                });
+            }
+            
+            // Problem özeti tablosu
+            if (problems.length > 0) {
+                html += '<div class="table-container"><table style="margin-bottom: 20px;">';
+                html += '<tr><th>Problem</th><th>Mevcut GS</th><th>Gerekli GS</th><th>Kritiklik</th></tr>';
+                
+                problems.forEach(p => {
+                    const severityColor = p.severity === 'high' ? '#dc3545' : '#ffc107';
+                    const severityText = p.severity === 'high' ? 'Yüksek' : 'Orta';
+                    html += '<tr>';
+                    html += '<td><strong>' + p.type + '</strong></td>';
+                    html += '<td style="color: ' + severityColor + ';"><strong>' + p.current + '</strong></td>';
+                    html += '<td>' + p.required + '</td>';
+                    html += '<td style="color: ' + severityColor + ';"><strong>' + severityText + '</strong></td>';
+                    html += '</tr>';
+                });
+                
+                html += '</table></div>';
+            }
+            
+            // Çözüm önerileri
+            if (solutions.length > 0) {
+                html += '<h4 style="color: #721c24; margin: 20px 0 10px 0;">💡 Önerilen Çözümler (Öncelik Sırasına Göre)</h4>';
+                
+                solutions.forEach((sol, idx) => {
+                    html += '<div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc3545;">';
+                    html += '<h5 style="color: #dc3545; margin-bottom: 10px;">' + sol.icon + ' ' + sol.problem + '</h5>';
+                    
+                    sol.solutions.forEach((s, sidx) => {
+                        const priorityColor = s.priority === 1 ? '#dc3545' : s.priority === 2 ? '#ffc107' : '#17a2b8';
+                        const priorityText = s.priority === 1 ? '🔴 Öncelik 1' : s.priority === 2 ? '🟡 Öncelik 2' : '🔵 Öncelik 3';
+                        
+                        html += '<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+                        html += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">';
+                        html += '<strong style="color: #333;">' + (sidx + 1) + '. ' + s.title + '</strong>';
+                        html += '<span style="background: ' + priorityColor + '; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px;">' + priorityText + '</span>';
+                        html += '</div>';
+                        
+                        if (s.current) {
+                            html += '<div style="margin: 5px 0; font-size: 14px;">';
+                            html += '<span style="color: #666;">Mevcut: </span><strong>' + s.current + '</strong>';
+                            html += ' → <span style="color: #666;">Önerilen: </span><strong style="color: #28a745;">' + s.suggested + '</strong>';
+                            html += '</div>';
+                        }
+                        
+                        html += '<div style="color: #555; font-size: 14px; margin-top: 5px;">' + s.description + '</div>';
+                        html += '<div style="margin-top: 5px; font-size: 12px; color: #666;">Etkinlik: <strong>' + s.effectiveness + '</strong></div>';
+                        
+                        // Otomatik düzelt butonu
+                        if (s.action) {
+                            html += '<button class="btn" style="margin-top: 10px; padding: 8px 16px; font-size: 14px;" onclick="autoFix(&quot;' + s.action + '&quot;, ' + s.suggested + ')">';
+                            html += '🔧 Bu Değeri Otomatik Uygula';
+                            html += '</button>';
+                        }
+                        
+                        html += '</div>';
+                    });
+                    
+                    html += '</div>';
+                });
+            }
+            
+            // Genel öneriler
+            html += '<div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #17a2b8;">';
+            html += '<h5 style="color: #17a2b8; margin-bottom: 10px;">📌 Genel Öneriler</h5>';
+            html += '<ul style="margin: 10px 0; padding-left: 20px; color: #333;">';
+            html += '<li>Birden fazla çözümü kombine ederek daha iyi sonuç alabilirsiniz</li>';
+            html += '<li>Temel genişliğini artırmak, çoğu sorunu çözen en efektif yöntemdir</li>';
+            html += '<li>Kayma problemlerinde mutlaka temel dişi (shear key) kullanın</li>';
+            html += '<li>Değişiklikleri yaptıktan sonra tüm hesaplamaları tekrar yapın</li>';
+            html += '<li>Zemin şartları kötüyse, kazık veya zemin iyileştirmesi düşünün</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            html += '</div>';
+            return html;
+        }
+
+        function generateStructuralSolutions(inputs, structuralResults) {
+            let html = '<div class="warning-box" style="margin-top: 20px;">';
+            html += '<h4 style="color: #721c24;">🔧 YAPISAL TASARIM PROBLEMLERI VE ÇÖZÜMLERİ</h4>';
+            
+            if (!structuralResults.kesme_ok) {
+                html += '<div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #dc3545;">';
+                html += '<h5 style="color: #dc3545; margin-bottom: 10px;">⚠️ Kesme Kapasitesi Yetersiz</h5>';
+                
+                const kesme_eksiklik = ((structuralResults.V_d_kesme / structuralResults.V_cr) - 1) * 100;
+                html += '<p style="color: #666;">Mevcut kesme kuvveti, beton kesme dayanımını <strong>%' + kesme_eksiklik.toFixed(1) + '</strong> aşıyor.</p>';
+                
+                html += '<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+                html += '<strong>1. Perde Kalınlığını Artır (En Efektif)</strong>';
+                html += '<div style="margin: 5px 0; font-size: 14px;">';
+                html += '<span style="color: #666;">Mevcut: </span><strong>' + inputs.W_alt + ' m</strong>';
+                const suggested_W = inputs.W_alt * Math.sqrt(structuralResults.V_d_kesme / structuralResults.V_cr);
+                html += ' → <span style="color: #666;">Önerilen: </span><strong style="color: #28a745;">' + suggested_W.toFixed(2) + ' m</strong>';
+                html += '</div>';
+                html += '<p style="color: #555; font-size: 14px;">Kesme dayanımı kalınlıkla doğru orantılıdır (V<sub>cr</sub> = 0.65 × f<sub>ctd</sub> × b<sub>w</sub> × d)</p>';
+                html += '<button class="btn" style="margin-top: 10px; padding: 8px 16px; font-size: 14px;" onclick="autoFixStructural(&quot;W_alt&quot;, ' + suggested_W.toFixed(2) + ')">';
+                html += '🔧 Bu Değeri Otomatik Uygula';
+                html += '</button>';
+                html += '</div>';
+                
+                html += '<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+                html += '<strong>2. Etriye Donatısı Ekle</strong>';
+                html += '<p style="color: #555; font-size: 14px;">Φ8 veya Φ10 etriyeler, 15-20 cm aralıklarla yerleştirilebilir.</p>';
+                html += '<p style="color: #666; font-size: 13px;"><em>Not: TS 500 §8.5 - Etriye hesabı için ilave tasarım gereklidir.</em></p>';
+                html += '</div>';
+                
+                html += '<div style="margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+                html += '<strong>3. Beton Sınıfını Yükselt</strong>';
+                html += '<div style="margin: 5px 0; font-size: 14px;">';
+                html += '<span style="color: #666;">Mevcut: </span><strong>' + inputs.beton_sinifi + '</strong>';
+                html += ' → <span style="color: #666;">Önerilen: </span><strong style="color: #28a745;">C35 veya C40</strong>';
+                html += '</div>';
+                html += '<p style="color: #555; font-size: 14px;">Daha yüksek beton sınıfı, f<sub>ctd</sub> değerini artırır.</p>';
+                html += '</div>';
+                
+                html += '</div>';
+            }
+            
+            if (!structuralResults.aralık_ok) {
+                html += '<div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #ffc107;">';
+                html += '<h5 style="color: #856404; margin-bottom: 10px;">⚡ Donatı Aralığı Fazla</h5>';
+                
+                html += '<p style="color: #666;">Hesaplanan donatı aralığı (<strong>' + structuralResults.donati_araligi + ' mm</strong>), maksimum izin verilen aralığı (<strong>' + structuralResults.s_max.toFixed(0) + ' mm</strong>) aşıyor.</p>';
+                
+                html += '<div style="margin: 10px 0; padding: 10px; background: #fff3cd; border-radius: 5px;">';
+                html += '<strong>Çözüm: Donatı Çapını Artır</strong>';
+                html += '<div style="margin: 5px 0; font-size: 14px;">';
+                html += '<span style="color: #666;">Mevcut: </span><strong>Φ16</strong>';
+                html += ' → <span style="color: #666;">Önerilen: </span><strong style="color: #dc3545;">Φ18 veya Φ20</strong>';
+                html += '</div>';
+                html += '<p style="color: #555; font-size: 14px;">Daha büyük çap, aynı A<sub>s</sub> için daha az adet demirle çalışmanıza olanak verir.</p>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px; font-size: 13px; color: #666;">';
+                html += '<li>Φ18 kullanımında: Aralık ≈ ' + (structuralResults.donati_araligi * (18*18)/(16*16)).toFixed(0) + ' mm</li>';
+                html += '<li>Φ20 kullanımında: Aralık ≈ ' + (structuralResults.donati_araligi * (20*20)/(16*16)).toFixed(0) + ' mm</li>';
+                html += '</ul>';
+                html += '</div>';
+                
+                html += '</div>';
+            }
+            
+            html += '<div style="background: white; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #17a2b8;">';
+            html += '<h5 style="color: #17a2b8; margin-bottom: 10px;">📌 TS 500 Önemli Hatırlatmalar</h5>';
+            html += '<ul style="margin: 10px 0; padding-left: 20px; color: #333;">';
+            html += '<li>Minimum duvar kalınlığı: 150 mm (tercihan ≥ 200 mm)</li>';
+            html += '<li>Beton örtüsü: Minimum 40 mm (zemin teması olan yerlerde 50 mm)</li>';
+            html += '<li>Minimum donatı oranı: Her iki yüzde toplam 0.0025A<sub>g</sub></li>';
+            html += '<li>Maksimum donatı aralığı: Min(300 mm, 1.5×kalınlık)</li>';
+            html += '<li>Köşe ve derz bölgelerinde ek donatı gerekir</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            html += '</div>';
+            return html;
+        }
+
+        function autoFixStructural(param, value) {
+            if (param === 'W_alt') {
+                document.getElementById('W_alt').value = value;
+                // W_ust'u de orantılı artır
+                const ratio = value / parseFloat(document.getElementById('W_alt').value);
+                const newWust = parseFloat(document.getElementById('W_ust').value) * ratio;
+                document.getElementById('W_ust').value = Math.max(0.3, newWust).toFixed(2);
+                
+                alert('✓ Perde kalınlıkları güncellendi:\n' +
+                      '  • Alt kalınlık: ' + value + ' m\n' +
+                      '  • Üst kalınlık: ' + Math.max(0.3, newWust).toFixed(2) + ' m\n\n' +
+                      'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayın.');
+            }
+        }
+
+        function autoFix(action, value) {
+            if (action === 'increase_B') {
+                document.getElementById('B').value = value;
+                alert('✓ Temel genişliği ' + value + ' m olarak güncellendi.\n\nŞimdi "Tüm Hesaplamaları Yap" butonuna tıklayarak yeniden hesaplayın.');
+            }
+        }
+
+        function calculateMetraj(inputs) {
+            const results = {};
+            
+            // Beton metrajı
+            const H_perde = inputs.H - inputs.TH;
+            const W_ort = (inputs.W_alt + inputs.W_ust) / 2;
+            
+            // Temel
+            results.V_temel = inputs.L * inputs.B * inputs.TH;
+            
+            // Perde
+            results.V_perde = inputs.L * W_ort * H_perde;
+            
+            // Toplam beton (C30)
+            results.V_beton_toplam = results.V_temel + results.V_perde;
+            
+            // Grobeton (10cm)
+            results.V_grobeton = inputs.L * inputs.B * 0.1;
+            
+            // Kalıp metrajı
+            // Temel kalıbı
+            results.A_kalip_temel = 2 * inputs.L * inputs.TH + 
+                                   2 * inputs.B * inputs.TH;
+            
+            // Perde kalıbı (iki yüz)
+            results.A_kalip_perde = 2 * inputs.L * H_perde;
+            
+            // Toplam kalıp
+            results.A_kalip_toplam = results.A_kalip_temel + results.A_kalip_perde;
+            
+            // Donatı metrajı (basitleştirilmiş)
+            // Düşey donatı (perde)
+            const n_dus = Math.ceil(inputs.L * 1000 / 150); // 15cm aralıkla
+            const L_dus_bir = H_perde + 0.4 + 0.4; // Ankraj uzunlukları
+            results.L_donati_dusey = n_dus * L_dus_bir * 2; // İki yüz
+            
+            // Yatay donatı (perde)
+            const n_yat = Math.ceil(H_perde * 1000 / 200); // 20cm aralıkla
+            const L_yat_bir = inputs.L + 0.4 + 0.4; // Ankraj
+            results.L_donati_yatay = n_yat * L_yat_bir * 2;
+            
+            // Temel donatısı
+            const n_temel_ust = Math.ceil(inputs.L * 1000 / 150);
+            const n_temel_alt = Math.ceil(inputs.B * 1000 / 150);
+            results.L_donati_temel = (n_temel_ust * (inputs.B + 0.8) + 
+                                     n_temel_alt * (inputs.L + 0.8)) * 2;
+            
+            // Toplam donatı uzunluğu
+            results.L_donati_toplam = results.L_donati_dusey + 
+                                     results.L_donati_yatay + 
+                                     results.L_donati_temel;
+            
+            // Donatı ağırlığı (Φ16 için 1.578 kg/m)
+            results.W_donati = results.L_donati_toplam * 1.578 / 1000; // ton
+            
+            return results;
+        }
+
+        function displayResults() {
+            const inputs = getInputValues();
+            
+            // Hidrolik hesaplar
+            const hydResults = calculateHydraulics(inputs);
+            calculationResults.hydraulics = hydResults;
+            
+            let html = '<div class="formula-box"><strong>Manning Denklemi:</strong> V = (1/n) × R<sub>h</sub><sup>2/3</sup> × S<sub>o</sub><sup>1/2</sup></div>';
+            html += '<div class="result-item"><span class="result-label">Su Derinliği (h<sub>su</sub>)</span><span class="result-value">' + hydResults.h_su.toFixed(2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Hızı (V)</span><span class="result-value">' + hydResults.V.toFixed(2) + ' m/sn</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Alanı (A)</span><span class="result-value">' + hydResults.A.toFixed(2) + ' m²</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hidrolik Yarıçap (R<sub>h</sub>)</span><span class="result-value">' + hydResults.R_h.toFixed(3) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Islak Çevre (P)</span><span class="result-value">' + hydResults.P.toFixed(2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hava Payı (H<sub>p</sub>)</span><span class="result-value">' + hydResults.H_p.toFixed(2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hidrolik Yükseklik (H<sub>h</sub>)</span><span class="result-value">' + hydResults.H_h.toFixed(2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Froude Sayısı (Fr)</span><span class="result-value">' + hydResults.Fr.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Tipi</span><span class="result-value ' + (hydResults.Fr < 1 ? 'success' : 'warning') + '">' + hydResults.flow_type + '</span></div>';
+            html += '<div class="formula-box"><strong>Hidrostatik Basınç:</strong> P<sub>w</sub> = (1/2) × γ<sub>w</sub> × h<sub>su</sub>²</div>';
+            html += '<div class="result-item"><span class="result-label">Hidrostatik Basınç (P<sub>w</sub>)</span><span class="result-value">' + hydResults.P_w.toFixed(2) + ' kN/m²</span></div>';
+            
+            // Hidrolik uyarılar ve öneriler
+            if (hydResults.Fr > 1.2) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #856404;">⚠️ Yüksek Hızlı Akım Uyarısı</h5>';
+                html += '<p>Froude sayısı ' + hydResults.Fr.toFixed(2) + ' > 1.0 (Kritik üstü akım)</p>';
+                html += '<strong>Riskler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px;">';
+                html += '<li>Kanal tabanında aşınma ve kavitasyon riski</li>';
+                html += '<li>Hidrolik sıçrama olasılığı</li>';
+                html += '<li>Enerji kırıcı gerekebilir</li>';
+                html += '</ul>';
+                html += '<strong>Öneriler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px; color: #28a745;">';
+                html += '<li>Kanal eğimini azaltın (mevcut: ' + inputs.So + ')</li>';
+                html += '<li>Kanal genişliğini artırın (mevcut: ' + inputs.b + ' m → önerilen: ' + (inputs.b * 1.2).toFixed(2) + ' m)</li>';
+                html += '<li>Basamaklı kanal (stepped channel) düşünün</li>';
+                html += '<li>Enerji kırıcı yapılar ekleyin</li>';
+                html += '</ul>';
+                html += '</div>';
+            } else if (hydResults.Fr < 0.5) {
+                html += '<div class="info-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #0c5460;">💡 Çok Yavaş Akım</h5>';
+                html += '<p>Froude sayısı ' + hydResults.Fr.toFixed(2) + ' < 0.5 (Çok sakin akım)</p>';
+                html += '<strong>Değerlendirme:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px;">';
+                html += '<li>Akım güvenli ancak kanal verimsiz olabilir</li>';
+                html += '<li>Sediment birikme riski artar</li>';
+                html += '<li>Daha küçük kesit yeterli olabilir</li>';
+                html += '</ul>';
+                html += '<strong>Öneriler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px; color: #17a2b8;">';
+                html += '<li>Kanal genişliğini azaltabilirsiniz (mevcut: ' + inputs.b + ' m → önerilen: ' + (inputs.b * 0.85).toFixed(2) + ' m)</li>';
+                html += '<li>Kanal eğimini artırabilirsiniz (ekonomik tasarım için)</li>';
+                html += '<li>Periyodik temizlik planı yapın (sediment kontrolü)</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            if (hydResults.h_su / inputs.b > 1.5) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #856404;">⚠️ Derinlik/Genişlik Oranı Yüksek</h5>';
+                html += '<p>h/b oranı = ' + (hydResults.h_su / inputs.b).toFixed(2) + ' > 1.5</p>';
+                html += '<strong>Problem:</strong> Dar ve derin kanal, yapım zorluğu ve maliyet artışına neden olur.';
+                html += '<br><strong>Öneri:</strong> Kanal genişliğini ' + (hydResults.h_su / 1.0).toFixed(2) + ' m\'ye artırın (h/b ≈ 1.0 ideal).';
+                html += '</div>';
+            }
+            
+            // Hava payı kontrolü
+            if (hydResults.H_p < 0.5) {
+                html += '<div class="info-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #0c5460;">💡 Hava Payı Önerisi</h5>';
+                html += '<p>Hesaplanan hava payı: ' + hydResults.H_p.toFixed(2) + ' m</p>';
+                html += '<p>Meskun mahalde yapılan kanallar için en az <strong>0.50 m</strong> hava payı önerilir.</p>';
+                html += '<p style="color: #28a745;">Önerilen toplam kanal yüksekliği: ' + (hydResults.h_su + 0.5).toFixed(2) + ' m</p>';
+                html += '</div>';
+            }
+            
+            document.getElementById('hidrolik-sonuc').innerHTML = html;
+            
+            // Geoteknik hesaplar
+            const geoResults = calculateGeotechnics(inputs);
+            calculationResults.geotechnics = geoResults;
+            
+            html = '<div class="formula-box"><strong>Rankine Teorisi:</strong> K<sub>a</sub> = tan²(45° - φ/2), K<sub>p</sub> = tan²(45° + φ/2)</div>';
+            html += '<div class="result-item"><span class="result-label">Aktif Toprak Basıncı Katsayısı (K<sub>a</sub>)</span><span class="result-value">' + geoResults.K_a.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Pasif Toprak Basıncı Katsayısı (K<sub>p</sub>)</span><span class="result-value">' + geoResults.K_p.toFixed(3) + '</span></div>';
+            html += '<div class="formula-box"><strong>Statik Aktif İtki:</strong> P<sub>a</sub> = (1/2) × γ × H² × K<sub>a</sub></div>';
+            html += '<div class="result-item"><span class="result-label">Statik Aktif Toprak İtkisi (P<sub>a</sub>)</span><span class="result-value">' + geoResults.P_a.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">P<sub>a</sub> Etkime Kolu</span><span class="result-value">' + geoResults.P_a_arm.toFixed(2) + ' m (H/3)</span></div>';
+            html += '<div class="formula-box"><strong>Sürşarj İtkisi:</strong> P<sub>q</sub> = q × H × K<sub>a</sub></div>';
+            html += '<div class="result-item"><span class="result-label">Sürşarj İtkisi (P<sub>q</sub>)</span><span class="result-value">' + geoResults.P_q.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">P<sub>q</sub> Etkime Kolu</span><span class="result-value">' + geoResults.P_q_arm.toFixed(2) + ' m (H/2)</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Toplam Yatay İtki (Statik)</strong></span><span class="result-value success">' + geoResults.P_h_static.toFixed(2) + ' kN/m</span></div>';
+            
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Ağırlık Hesapları</h4>';
+            html += '<div class="result-item"><span class="result-label">Temel Ağırlığı (W<sub>temel</sub>)</span><span class="result-value">' + geoResults.W_temel.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Perde Ağırlığı (W<sub>perde</sub>)</span><span class="result-value">' + geoResults.W_perde.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Zemin Dolgusunun Ağırlığı (W<sub>zemin</sub>)</span><span class="result-value">' + geoResults.W_zemin.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Toplam Düşey Yük (ΣV)</strong></span><span class="result-value success">' + geoResults.V_total.toFixed(2) + ' kN/m</span></div>';
+            
+            // Zemin uyarıları ve önerileri
+            if (inputs.phi < 28) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #721c24;">🚨 Düşük İçsel Sürtünme Açısı</h5>';
+                html += '<p>Zemin sürtünme açısı φ = ' + inputs.phi + '° < 28° (Zayıf zemin)</p>';
+                html += '<strong>Riskler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px;">';
+                html += '<li>Yüksek aktif toprak basıncı (K<sub>a</sub> = ' + geoResults.K_a.toFixed(3) + ')</li>';
+                html += '<li>Stabilite problemleri olasılığı yüksek</li>';
+                html += '<li>Oturma ve deformasyon riski</li>';
+                html += '</ul>';
+                html += '<strong>Önerilen Çözümler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px; color: #28a745;">';
+                html += '<li><strong>1. Öncelik:</strong> Geri dolgu malzemesini değiştirin (GW, SW - φ > 32°)</li>';
+                html += '<li><strong>2. Öncelik:</strong> Zemin iyileştirmesi yapın (kompaksiyon, yer değiştirme)</li>';
+                html += '<li><strong>3. Öncelik:</strong> Geogrid takviyeli dolgu kullanın</li>';
+                html += '<li>Alternatif: Kazık veya jet-grout ile zemin güçlendirme</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            if (inputs.c > 0) {
+                html += '<div class="info-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #0c5460;">💡 Kohezyon Değeri Hakkında</h5>';
+                html += '<p>Girilen kohezyon: c = ' + inputs.c + ' kPa</p>';
+                html += '<p><strong>Önemli:</strong> İstinat duvarı tasarımında genellikle c = 0 alınır (güvenli taraf). Kohezyonlu zeminler (kil) zamana bağlı dayanım kaybı gösterebilir.</p>';
+                html += '<p style="color: #dc3545;"><strong>Öneri:</strong> Uzun dönem stabilitesi için c = 0 kabul edin ve hesapları tekrarlayın.</p>';
+                html += '</div>';
+            }
+            
+            if (geoResults.K_a > 0.4) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #856404;">⚠️ Yüksek Aktif Basınç Katsayısı</h5>';
+                html += '<p>K<sub>a</sub> = ' + geoResults.K_a.toFixed(3) + ' > 0.40</p>';
+                html += '<p>Zemin, duvara yüksek yatay itki uygulayacaktır.</p>';
+                html += '<strong>Öneriler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px;">';
+                html += '<li>Daha kaliteli geri dolgu malzemesi kullanın (φ > 32°)</li>';
+                html += '<li>Duvar geometrisini güçlendirin (temel genişliği, perde kalınlığı)</li>';
+                html += '<li>Geogrid veya geotekstil takviye düşünün</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            // Pasif direnç uyarısı
+            html += '<div class="info-box" style="margin-top: 20px;">';
+            html += '<h5 style="color: #17a2b8;">📌 Pasif Toprak Direnci (K<sub>p</sub> = ' + geoResults.K_p.toFixed(2) + ')</h5>';
+            html += '<p>Pasif direnç, kayma güvenliğini artırmak için kullanılabilir, ancak:</p>';
+            html += '<ul style="margin: 5px 0; padding-left: 20px; color: #666;">';
+            html += '<li>Temel önündeki dolgunun kalıcı olduğundan emin olun</li>';
+            html += '<li>Kazı veya erozyon riski varsa pasif direnci hesaba katmayın</li>';
+            html += '<li>Güvenlik için pasif direncin %50\'sini kullanın (Terzaghi önerisi)</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            document.getElementById('geoteknik-sonuc').innerHTML = html;
+            
+            // Deprem hesapları
+            const seismicResults = calculateSeismic(inputs, geoResults);
+            calculationResults.seismic = seismicResults;
+            
+            html = '<div class="info-box"><strong>TBDY 2018 Pseudo-Statik Yaklaşım (Tam Mononobe-Okabe)</strong></div>';
+            
+            html += '<h4 style="color: #2a5298; margin-top: 15px;">Zemin Sınıfı Etkisi (TBDY 2018 Tablo 16.1)</h4>';
+            html += '<div class="result-item"><span class="result-label">Zemin Sınıfı</span><span class="result-value">' + inputs.zemin_sinifi + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Zemin Katsayısı (F<sub>s</sub>)</span><span class="result-value">' + seismicResults.F_s.toFixed(2) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">S<sub>DS</sub> (Harita)</span><span class="result-value">' + inputs.SDS.toFixed(3) + ' g</span></div>';
+            html += '<div class="result-item"><span class="result-label">S<sub>DS,zemin</sub> (Düzeltilmiş)</span><span class="result-value warning">' + seismicResults.S_DS_zemin.toFixed(3) + ' g</span></div>';
+            
+            html += '<h4 style="color: #2a5298; margin-top: 15px;">Deprem Katsayıları</h4>';
+            html += '<div class="formula-box"><strong>Yatay:</strong> k<sub>h</sub> = 0.4 × (S<sub>DS,zemin</sub>/r)<br><strong>Düşey:</strong> k<sub>v</sub> = (2/3) × k<sub>h</sub></div>';
+            html += '<div class="result-item"><span class="result-label">Yatay Deprem Katsayısı (k<sub>h</sub>)</span><span class="result-value">' + seismicResults.k_h.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Düşey Deprem Katsayısı (k<sub>v</sub>)</span><span class="result-value">' + seismicResults.k_v.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">θ (Sözde-yatay açı)</span><span class="result-value">' + seismicResults.theta.toFixed(2) + '°</span></div>';
+            
+            html += '<h4 style="color: #2a5298; margin-top: 15px;">Dinamik Basınç</h4>';
+            html += '<div class="result-item"><span class="result-label">Dinamik Aktif Basınç Katsayısı (K<sub>ae</sub>)</span><span class="result-value">' + seismicResults.K_ae.toFixed(3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">k<sub>v</sub> Durumu</span><span class="result-value">' + seismicResults.kv_durum + '</span></div>';
+            html += '<div class="formula-box"><strong>Toplam Dinamik İtki (TBDY 16.23):</strong> P<sub>t</sub> = K<sub>ae</sub> × (1±k<sub>v</sub>) × [(1/2)γH² + qH]</div>';
+            html += '<div class="result-item"><span class="result-label">Toplam Dinamik İtki (P<sub>t</sub>)</span><span class="result-value warning">' + seismicResults.P_t.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Dinamik İtki Artışı (ΔP)</span><span class="result-value danger">' + seismicResults.Delta_P.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">P<sub>t</sub> Etkime Kolu</span><span class="result-value">' + seismicResults.P_t_arm.toFixed(2) + ' m (H/2)</span></div>';
+            
+            const artis_yuzdesi = ((seismicResults.P_t - geoResults.P_h_static) / geoResults.P_h_static * 100).toFixed(1);
+            html += '<div class="warning-box">⚠️ Deprem etkisiyle yatay itki <strong>%' + artis_yuzdesi + '</strong> artmıştır.</div>';
+            
+            // Deprem tasarım önerileri
+            if (seismicResults.k_h > 0.25) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #721c24;">🌊 Yüksek Sismik Yük Bölgesi</h5>';
+                html += '<p>Yatay deprem katsayısı k<sub>h</sub> = ' + seismicResults.k_h.toFixed(3) + ' > 0.25</p>';
+                html += '<p>Proje yüksek deprem riski olan bir bölgede bulunmaktadır.</p>';
+                html += '<strong>Özel Önlemler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px;">';
+                html += '<li><strong>Drenaj sistemi kritik:</strong> Su basıncı deprem itkisini %50-80 artırabilir</li>';
+                html += '<li><strong>Temel dişi zorunlu:</strong> Kayma güvenliği için mutlaka shear key ekleyin</li>';
+                html += '<li><strong>Geri dolgu:</strong> Hafif malzeme (EPS geofom, agrega) kullanın</li>';
+                html += '<li><strong>Geogrid takviye:</strong> 50-80 cm aralıklarla geogrid şeritler yerleştirin</li>';
+                html += '<li><strong>Deformasyon derzleri:</strong> 5-7 m aralıklarla derz bırakın</li>';
+                html += '<li><strong>Alternatif:</strong> Betonarme L-duvar veya ankrajlı duvar düşünün</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            if (inputs.SDS > 1.0) {
+                html += '<div class="warning-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #721c24;">🚨 Çok Yüksek Deprem Riski</h5>';
+                html += '<p>S<sub>DS</sub> = ' + inputs.SDS + ' g > 1.0 (DD-1 deprem bölgesi)</p>';
+                html += '<strong>Kritik Öneriler:</strong>';
+                html += '<ul style="margin: 10px 0; padding-left: 20px; color: #dc3545;">';
+                html += '<li>Yapı-zemin etkileşimi analizi yapılmalı</li>';
+                html += '<li>Dinamik analiz (zaman tanım alanında) tercih edilmeli</li>';
+                html += '<li>Sıvılaşma potansiyeli mutlaka araştırılmalı</li>';
+                html += '<li>Ankrajlı veya kazıklı sistem düşünülmeli</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            html += '<div class="info-box" style="margin-top: 20px;">';
+            html += '<h5 style="color: #0c5460;">📌 TBDY 2018 Önemli Notlar</h5>';
+            html += '<ul style="margin: 5px 0; padding-left: 20px;">';
+            html += '<li>Azaltma katsayısı r = ' + inputs.r + ' (Konsol duvarlar için 1.5-2.0)</li>';
+            html += '<li>k<sub>v</sub> hem (+) hem de (-) durumları için kontrol edilmelidir</li>';
+            html += '<li>Dinamik itki etkime noktası: H/2 (statikten farklı)</li>';
+            html += '<li>Su basıncı varsa: ΔP<sub>su</sub> = 0.8 × γ<sub>w</sub> × h<sup>2</sup> × k<sub>h</sub></li>';
+            html += '<li>Drenaj sistemi çalışmıyorsa dinamik su basıncı eklenmelidir</li>';
+            html += '</ul>';
+            html += '</div>';
+            
+            // Alternatif tasarım önerisi
+            if (seismicResults.Delta_P / geoResults.P_h_static > 0.5) {
+                html += '<div class="info-box" style="margin-top: 20px;">';
+                html += '<h5 style="color: #0c5460;">💡 Alternatif Tasarım Önerisi</h5>';
+                html += '<p>Deprem itkisi artışı statik itkinin %50\'sini aşıyor.</p>';
+                html += '<strong>Değerlendirilmesi Gereken Alternatifler:</strong>';
+                html += '<ul style="margin: 5px 0; padding-left: 20px;">';
+                html += '<li><strong>Ankrajlı İstinat Duvarı:</strong> Geri ankrajlarla deprem yükünü azaltın</li>';
+                html += '<li><strong>Kazıklı Duvar:</strong> Taşıma gücü ve kayma problemlerini çözer</li>';
+                html += '<li><strong>MSE Duvar:</strong> Geogrid takviyeli zemin, depremde daha esnek</li>';
+                html += '<li><strong>Geri Basamaklı Duvar:</strong> Dolgu ağırlığını azaltır</li>';
+                html += '</ul>';
+                html += '</div>';
+            }
+            
+            document.getElementById('deprem-sonuc').innerHTML = html;
+            
+            // Stabilite kontrolleri
+            const stabilityResults = calculateStability(inputs, geoResults, seismicResults);
+            calculationResults.stability = stabilityResults;
+            
+            html = '<h4 style="color: #2a5298;">STATİK DURUM KONTROLLERI</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Kontrol Tipi</th><th>Formül</th><th>Hesaplanan GS</th><th>Minimum GS</th><th>Durum</th></tr>';
+            
+            html += '<tr><td><strong>Devrilme</strong></td><td>GS = ΣM<sub>R</sub> / ΣM<sub>D</sub></td><td>' + stabilityResults.GS_devrilme_static.toFixed(2) + '</td><td>≥ 2.0</td><td>' + (stabilityResults.devrilme_static_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Kayma</strong></td><td>GS = ΣF<sub>R</sub> / ΣF<sub>D</sub></td><td>' + stabilityResults.GS_kayma_static.toFixed(2) + '</td><td>≥ 1.5</td><td>' + (stabilityResults.kayma_static_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Eksantrisite</strong></td><td>e < B/6</td><td>e = ' + stabilityResults.e_static.toFixed(3) + ' m<br>e/B = ' + stabilityResults.e_B_orani_static.toFixed(3) + '</td><td>< 0.167</td><td>' + (stabilityResults.eksantrisite_static_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Taşıma Gücü</strong></td><td>GS = q<sub>ult</sub> / q<sub>max</sub></td><td>' + stabilityResults.GS_tasima_static.toFixed(2) + '<br>q<sub>max</sub> = ' + stabilityResults.q_max_static.toFixed(2) + ' kN/m²</td><td>≥ 2.5</td><td>' + (stabilityResults.tasima_static_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '</table></div>';
+            
+            html += '<h4 style="margin-top: 30px; color: #2a5298;">DİNAMİK DURUM KONTROLLERI (TBDY 2018)</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Kontrol Tipi</th><th>Formül</th><th>Hesaplanan GS</th><th>Minimum GS</th><th>Durum</th></tr>';
+            
+            html += '<tr><td><strong>Devrilme</strong></td><td>GS = ΣM<sub>R</sub> / ΣM<sub>D</sub></td><td>' + stabilityResults.GS_devrilme_dynamic.toFixed(2) + '</td><td>≥ 1.3</td><td>' + (stabilityResults.devrilme_dynamic_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Kayma</strong></td><td>GS = ΣF<sub>R</sub> / ΣF<sub>D</sub></td><td>' + stabilityResults.GS_kayma_dynamic.toFixed(2) + '</td><td>≥ 1.1</td><td>' + (stabilityResults.kayma_dynamic_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Eksantrisite</strong></td><td>e < B/6</td><td>e = ' + stabilityResults.e_dynamic.toFixed(3) + ' m<br>e/B = ' + stabilityResults.e_B_orani_dynamic.toFixed(3) + '</td><td>< 0.167</td><td>' + (stabilityResults.eksantrisite_dynamic_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '<tr><td><strong>Taşıma Gücü</strong></td><td>GS = q<sub>ult</sub> / q<sub>max</sub></td><td>' + stabilityResults.GS_tasima_dynamic.toFixed(2) + '<br>q<sub>max</sub> = ' + stabilityResults.q_max_dynamic.toFixed(2) + ' kN/m²</td><td>≥ 1.0</td><td>' + (stabilityResults.tasima_dynamic_ok ? '<span class="result-value success">✓ UYGUN</span>' : '<span class="result-value danger">✗ UYGUN DEĞİL</span>') + '</td></tr>';
+            
+            html += '</table></div>';
+            
+            if (stabilityResults.tum_kontroller_ok) {
+                html += '<div class="success-box">✓ <strong>TÜM STABİLİTE KONTROLLERI UYGUN</strong> - Dış güvenlik sağlanmıştır.</div>';
+            } else {
+                html += '<div class="warning-box">⚠️ <strong>BAZI KONTROLLERDEN GEÇEMEDİ</strong> - Geometrik boyutlar revize edilmelidir.</div>';
+                
+                // Problem analizi ve çözüm önerileri
+                html += generateSolutionSuggestions(inputs, stabilityResults, geoResults);
+            }
+            
+            document.getElementById('stabilite-sonuc').innerHTML = html;
+            
+            // Yapısal tasarım
+            const structuralResults = calculateStructural(inputs, geoResults, seismicResults);
+            calculationResults.structural = structuralResults;
+            
+            html = '<div class="info-box"><strong>TS 500 - Betonarme Yapıların Hesap ve Yapım Kuralları</strong></div>';
+            
+            html += '<h4 style="color: #2a5298;">Malzeme Özellikleri</h4>';
+            html += '<div class="result-item"><span class="result-label">Beton Basınç Dayanımı (f<sub>ck</sub>)</span><span class="result-value">' + structuralResults.fck + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Basınç Dayanımı (f<sub>cd</sub>)</span><span class="result-value">' + structuralResults.fcd.toFixed(2) + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Çekme Dayanımı (f<sub>ctd</sub>)</span><span class="result-value">' + structuralResults.fctd.toFixed(2) + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Donatı Akma Dayanımı (f<sub>yk</sub>)</span><span class="result-value">' + structuralResults.fyk + ' MPa</span></div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Akma Dayanımı (f<sub>yd</sub>)</span><span class="result-value">' + structuralResults.fyd.toFixed(2) + ' MPa</span></div>';
+            
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Yük Kombinasyonları</h4>';
+            html += '<div class="formula-box"><strong>Statik:</strong> V<sub>d</sub> = 1.4G + 1.6H + 1.6Q</div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Statik)</span><span class="result-value">' + structuralResults.V_d_static.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="formula-box"><strong>Dinamik:</strong> V<sub>d</sub> = 1.0G + 1.0H + 1.0E</div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Dinamik)</span><span class="result-value">' + structuralResults.V_d_dynamic.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Maksimum Tasarım Yükü</strong></span><span class="result-value success">' + structuralResults.V_d_max.toFixed(2) + ' kN/m</span></div>';
+            
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Perde Donatı Hesabı</h4>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Momenti (M<sub>d</sub>)</span><span class="result-value">' + structuralResults.M_d_perde.toFixed(2) + ' kNm/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Gerekli Donatı Alanı (A<sub>s</sub>)</span><span class="result-value">' + (structuralResults.As_perde_gerekli * 10000).toFixed(2) + ' mm²/m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Minimum Donatı (TS 500 §12)</span><span class="result-value">' + (structuralResults.As_min_perde * 10000).toFixed(2) + ' mm²/m (0.0025A<sub>g</sub>/2)</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Tasarım Donatısı</strong></span><span class="result-value success">' + (structuralResults.As_perde_tasarim * 10000).toFixed(2) + ' mm²/m</span></div>';
+            
+            html += '<div class="success-box">';
+            html += '<strong>Seçilen Donatı:</strong><br>';
+            html += 'Φ' + structuralResults.donati_capi + ' / ' + structuralResults.donati_araligi + ' mm<br>';
+            html += '(' + structuralResults.donati_adet + ' adet/m, Her iki yüzde)<br>';
+            html += 'Maksimum aralık: ' + structuralResults.s_max.toFixed(0) + ' mm ' + (structuralResults.aralık_ok ? '✓' : '✗');
+            html += '</div>';
+            
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Kesme Güvenliği</h4>';
+            html += '<div class="formula-box"><strong>Beton Kesme Dayanımı:</strong> V<sub>cr</sub> = 0.65 × f<sub>ctd</sub> × b<sub>w</sub> × d</div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Kesme Kuvveti (V<sub>d</sub>)</span><span class="result-value">' + structuralResults.V_d_kesme.toFixed(2) + ' kN</span></div>';
+            html += '<div class="result-item"><span class="result-label">Beton Kesme Kapasitesi (V<sub>cr</sub>)</span><span class="result-value">' + structuralResults.V_cr.toFixed(2) + ' kN</span></div>';
+            html += '<div class="result-item"><span class="result-label"><strong>Kesme Kontrolü</strong></span><span class="result-value ' + (structuralResults.kesme_ok ? 'success">V<sub>d</sub> ≤ V<sub>cr</sub> ✓ UYGUN' : 'danger">V<sub>d</sub> > V<sub>cr</sub> ✗ UYGUN DEĞİL') + '</span></div>';
+            
+            // Yapısal problemler için çözüm önerileri
+            if (!structuralResults.kesme_ok || !structuralResults.aralık_ok) {
+                html += generateStructuralSolutions(inputs, structuralResults);
+            }
+            
+            document.getElementById('yapisal-sonuc').innerHTML = html;
+            
+            // Metraj hesapları
+            const metrajResults = calculateMetraj(inputs);
+            calculationResults.metraj = metrajResults;
+            
+            html = '<h4 style="color: #2a5298;">Beton Metrajı</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Yapı Elemanı</th><th>Boyutlar</th><th>Formül</th><th>Hacim (m³)</th></tr>';
+            html += '<tr><td><strong>Temel Plağı</strong></td><td>' + inputs.L + ' × ' + inputs.B + ' × ' + inputs.TH + '</td><td>L × B × T<sub>H</sub></td><td>' + metrajResults.V_temel.toFixed(2) + '</td></tr>';
+            html += '<tr><td><strong>Perde Duvarı</strong></td><td>' + inputs.L + ' × ' + ((inputs.W_alt + inputs.W_ust) / 2).toFixed(2) + ' × ' + (inputs.H - inputs.TH).toFixed(2) + '</td><td>L × W<sub>ort</sub> × H<sub>perde</sub></td><td>' + metrajResults.V_perde.toFixed(2) + '</td></tr>';
+            html += '<tr style="background: #f0f0f0;"><td><strong>TOPLAM C30 BETON</strong></td><td colspan="2"></td><td><strong>' + metrajResults.V_beton_toplam.toFixed(2) + '</strong></td></tr>';
+            html += '<tr><td><strong>Grobeton</strong></td><td>' + inputs.L + ' × ' + inputs.B + ' × 0.10</td><td>L × B × 0.10</td><td>' + metrajResults.V_grobeton.toFixed(2) + '</td></tr>';
+            html += '</table></div>';
+            
+            html += '<h4 style="margin-top: 30px; color: #2a5298;">Kalıp Metrajı</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Kalıp Türü</th><th>Hesaplama</th><th>Alan (m²)</th></tr>';
+            html += '<tr><td><strong>Temel Kalıbı</strong></td><td>2×(L×T<sub>H</sub> + B×T<sub>H</sub>)</td><td>' + metrajResults.A_kalip_temel.toFixed(2) + '</td></tr>';
+            html += '<tr><td><strong>Perde Kalıbı</strong></td><td>2 × L × H<sub>perde</sub></td><td>' + metrajResults.A_kalip_perde.toFixed(2) + '</td></tr>';
+            html += '<tr style="background: #f0f0f0;"><td><strong>TOPLAM KALIP</strong></td><td></td><td><strong>' + metrajResults.A_kalip_toplam.toFixed(2) + '</strong></td></tr>';
+            html += '</table></div>';
+            
+            html += '<h4 style="margin-top: 30px; color: #2a5298;">Donatı Metrajı</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Donatı Türü</th><th>Uzunluk (m)</th><th>Ağırlık (ton)</th></tr>';
+            html += '<tr><td><strong>Düşey Donatı (Perde)</strong></td><td>' + metrajResults.L_donati_dusey.toFixed(2) + '</td><td>' + (metrajResults.L_donati_dusey * 1.578 / 1000).toFixed(3) + '</td></tr>';
+            html += '<tr><td><strong>Yatay Donatı (Perde)</strong></td><td>' + metrajResults.L_donati_yatay.toFixed(2) + '</td><td>' + (metrajResults.L_donati_yatay * 1.578 / 1000).toFixed(3) + '</td></tr>';
+            html += '<tr><td><strong>Temel Donatısı</strong></td><td>' + metrajResults.L_donati_temel.toFixed(2) + '</td><td>' + (metrajResults.L_donati_temel * 1.578 / 1000).toFixed(3) + '</td></tr>';
+            html += '<tr style="background: #f0f0f0;"><td><strong>TOPLAM DONATI (Φ16)</strong></td><td><strong>' + metrajResults.L_donati_toplam.toFixed(2) + '</strong></td><td><strong>' + metrajResults.W_donati.toFixed(3) + '</strong></td></tr>';
+            html += '</table></div>';
+            
+            html += '<div class="info-box" style="margin-top: 20px;">';
+            html += '<strong>Metraj Özeti:</strong><br>';
+            html += '• C30 Beton: ' + metrajResults.V_beton_toplam.toFixed(2) + ' m³<br>';
+            html += '• Grobeton: ' + metrajResults.V_grobeton.toFixed(2) + ' m³<br>';
+            html += '• Kalıp: ' + metrajResults.A_kalip_toplam.toFixed(2) + ' m²<br>';
+            html += '• Donatı: ' + metrajResults.W_donati.toFixed(3) + ' ton (Φ16 B420C)';
+            html += '</div>';
+            
+            document.getElementById('metraj-sonuc').innerHTML = html;
+            
+            // Tam rapor
+            generateFullReport();
+        }
+
+        function generateFullReport() {
+            const inputs = getInputValues();
+            
+            let html = '<div style="max-width: 900px; margin: 0 auto;">';
+            
+            html += '<div style="text-align: center; margin-bottom: 30px;">';
+            html += '<h2 style="color: #1e3c72;">BETONARME U-KANAL TEKNİK HESAP RAPORU</h2>';
+            html += '<p style="color: #666;">TBDY 2018 & TS 500 Uyarınca</p>';
+            html += '<p style="color: #666;">Tarih: ' + new Date().toLocaleDateString('tr-TR') + '</p>';
+            html += '</div>';
+            
+            // 1. Proje Bilgileri
+            html += '<div class="form-section">';
+            html += '<h3>1. PROJE BİLGİLERİ VE GİRİŞ VERİLERİ</h3>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th colspan="2" style="background: #2a5298; color: white;">Hidrolik Parametreler</th></tr>';
+            html += '<tr><td>Tasarım Taşkın Debisi (Q<sub>T</sub>)</td><td>' + inputs.Q_T + ' m³/sn</td></tr>';
+            html += '<tr><td>Kanal Genişliği (b)</td><td>' + inputs.b + ' m</td></tr>';
+            html += '<tr><td>Manning Katsayısı (n)</td><td>' + inputs.n + '</td></tr>';
+            html += '<tr><td>Kanal Eğimi (S<sub>o</sub>)</td><td>' + inputs.So + '</td></tr>';
+            html += '<tr><th colspan="2" style="background: #2a5298; color: white;">Geometrik Parametreler</th></tr>';
+            html += '<tr><td>Toplam Duvar Yüksekliği (H)</td><td>' + inputs.H + ' m</td></tr>';
+            html += '<tr><td>Temel Genişliği (B)</td><td>' + inputs.B + ' m</td></tr>';
+            html += '<tr><td>Temel Kalınlığı (T<sub>H</sub>)</td><td>' + inputs.TH + ' m</td></tr>';
+            html += '<tr><td>Duvar Uzunluğu (L)</td><td>' + inputs.L + ' m</td></tr>';
+            html += '<tr><th colspan="2" style="background: #2a5298; color: white;">Zemin Parametreleri</th></tr>';
+            html += '<tr><td>Zemin Birim Hacim Ağırlığı (γ)</td><td>' + inputs.gamma_zemin + ' kN/m³</td></tr>';
+            html += '<tr><td>İçsel Sürtünme Açısı (φ)</td><td>' + inputs.phi + '°</td></tr>';
+            html += '<tr><td>Kohezyon (c)</td><td>' + inputs.c + ' kPa</td></tr>';
+            html += '<tr><td>Zemin Taşıma Gücü (q<sub>ult</sub>)</td><td>' + inputs.q_ult + ' kN/m²</td></tr>';
+            html += '<tr><th colspan="2" style="background: #2a5298; color: white;">Deprem Parametreleri</th></tr>';
+            html += '<tr><td>S<sub>DS</sub></td><td>' + inputs.SDS + ' g</td></tr>';
+            html += '<tr><td>Azaltma Katsayısı (r)</td><td>' + inputs.r + '</td></tr>';
+            html += '</table></div>';
+            html += '</div>';
+            
+            // Tüm sonuçları özet olarak ekle
+            if (calculationResults.hydraulics) {
+                html += '<div class="form-section">';
+                html += '<h3>2. HİDROLİK HESAPLAMALAR</h3>';
+                html += document.getElementById('hidrolik-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            if (calculationResults.geotechnics) {
+                html += '<div class="form-section">';
+                html += '<h3>3. GEOTEKNİK ANALİZ</h3>';
+                html += document.getElementById('geoteknik-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            if (calculationResults.seismic) {
+                html += '<div class="form-section">';
+                html += '<h3>4. DEPREM ETKİSİ (TBDY 2018)</h3>';
+                html += document.getElementById('deprem-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            if (calculationResults.stability) {
+                html += '<div class="form-section">';
+                html += '<h3>5. STABİLİTE KONTROLLERI</h3>';
+                html += document.getElementById('stabilite-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            if (calculationResults.structural) {
+                html += '<div class="form-section">';
+                html += '<h3>6. YAPISAL TASARIM (TS 500)</h3>';
+                html += document.getElementById('yapisal-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            if (calculationResults.metraj) {
+                html += '<div class="form-section">';
+                html += '<h3>7. METRAJ HESAPLARI</h3>';
+                html += document.getElementById('metraj-sonuc').innerHTML;
+                html += '</div>';
+            }
+            
+            // Sonuç ve Öneriler
+            html += '<div class="form-section">';
+            html += '<h3>8. SONUÇ VE ÖNERİLER</h3>';
+            
+            if (calculationResults.stability && calculationResults.stability.tum_kontroller_ok) {
+                html += '<div class="success-box">';
+                html += '<h4>✓ TASARIM UYGUN</h4>';
+                html += '<p>Yapılan hesaplamalar sonucunda, tasarlanan betonarme U-kanal yapısı:</p>';
+                html += '<ul>';
+                html += '<li>Hidrolik olarak tasarım debisini güvenle taşımaktadır</li>';
+                html += '<li>Tüm stabilite kontrollerini sağlamaktadır (devrilme, kayma, taşıma gücü)</li>';
+                html += '<li>TBDY 2018 deprem yönetmeliği şartlarını karşılamaktadır</li>';
+                html += '<li>TS 500 betonarme yönetmeliğine uygun donatı tasarlanmıştır</li>';
+                html += '</ul>';
+                html += '</div>';
+            } else {
+                html += '<div class="warning-box">';
+                html += '<h4>⚠️ REVİZYON GEREKLİ</h4>';
+                html += '<p>Bazı kontroller sağlanamamıştır. Geometrik boyutların revize edilmesi önerilir.</p>';
+                html += '</div>';
+            }
+            
+            html += '<div class="info-box">';
+            html += '<h4>Önemli Notlar:</h4>';
+            html += '<ul>';
+            html += '<li><strong>Drenaj Sistemi:</strong> Duvar arkasında hidrostatik basınç oluşmaması için etkin drenaj sistemi (barbakanlar, drenaj boruları, geotekstil) mutlaka uygulanmalıdır.</li>';
+            html += '<li><strong>Geri Dolgu:</strong> İyi derecelenmiş, kohezyonsuz malzeme (GW, SW, GP, SP) kullanılmalıdır. Şişen killer (CH, OH) kesinlikle kullanılmamalıdır.</li>';
+            html += '<li><strong>Temel Derinliği:</strong> Temel, don derinliğinin altına inmelidir.</li>';
+            html += '<li><strong>Derzler:</strong> 7-10 m aralıklarla düşey derzler bırakılmalıdır.</li>';
+            html += '<li><strong>Sıkıştırma:</strong> Dolgu aşırı sıkıştırılmamalıdır.</li>';
+            html += '<li><strong>Beton Kalitesi:</strong> Minimum C25/30, önerilen C30/37</li>';
+            html += '<li><strong>Donatı:</strong> B420C veya B500C, minimum örtü 4 cm</li>';
+            html += '</ul>';
+            html += '</div>';
+            html += '</div>';
+            
+            // İmza kısmı
+            html += '<div style="margin-top: 50px; display: flex; justify-content: space-around;">';
+            html += '<div style="text-align: center;">';
+            html += '<div style="border-top: 2px solid #333; width: 200px; margin-top: 50px;"></div>';
+            html += '<p><strong>Hesaplayan Mühendis</strong></p>';
+            html += '</div>';
+            html += '<div style="text-align: center;">';
+            html += '<div style="border-top: 2px solid #333; width: 200px; margin-top: 50px;"></div>';
+            html += '<p><strong>Kontrol Eden Mühendis</strong></p>';
+            html += '</div>';
+            html += '</div>';
+            
+            html += '</div>';
+            
+            document.getElementById('rapor-sonuc').innerHTML = html;
+        }
+
+        function calculateAll() {
+            displayResults();
+            // İlk sonuç sekmesine geç
+            const tabs = document.getElementsByClassName('tab');
+            const tabContents = document.getElementsByClassName('tab-content');
+            
+            for (let i = 0; i < tabContents.length; i++) {
+                tabContents[i].classList.remove('active');
+            }
+            for (let i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove('active');
+            }
+            
+            document.getElementById('hidrolik').classList.add('active');
+            tabs[1].classList.add('active');
+            
+            // Başarı mesajı göster
+            alert('✓ Hesaplamalar tamamlandı! Sonuçları inceleyin.');
+        }
+
+        function resetForm() {
+            if (confirm('Tüm verileri sıfırlamak istediğinizden emin misiniz?')) {
+                location.reload();
+            }
+        }
+
+        function quickOptimize() {
+            if (!confirm('🔧 HIZLI OPTİMİZASYON\n\n' +
+                        'Bu fonksiyon, tasarımı otomatik olarak optimize edecektir:\n\n' +
+                        '✓ Stabilite problemlerini çözmek için temel genişliğini ayarlar\n' +
+                        '✓ Yapısal problemleri gidermek için kesit boyutlarını optimize eder\n' +
+                        '✓ Hidrolik parametreleri kontrol eder\n\n' +
+                        'Devam etmek istiyor musunuz?')) {
+                return;
+            }
+            
+            const inputs = getInputValues();
+            let optimizationLog = '📋 OPTİMİZASYON RAPORU\n\n';
+            let changesMade = false;
+            
+            // İlk hesaplamayı yap
+            const hydResults = calculateHydraulics(inputs);
+            const geoResults = calculateGeotechnics(inputs);
+            const seismicResults = calculateSeismic(inputs, geoResults);
+            const stabilityResults = calculateStability(inputs, geoResults, seismicResults);
+            const structuralResults = calculateStructural(inputs, geoResults, seismicResults);
+            
+            // 1. Stabilite optimizasyonu
+            if (!stabilityResults.devrilme_static_ok || !stabilityResults.devrilme_dynamic_ok ||
+                !stabilityResults.kayma_static_ok || !stabilityResults.kayma_dynamic_ok ||
+                !stabilityResults.tasima_static_ok) {
+                
+                // Temel genişliğini artır
+                let B_new = inputs.B;
+                
+                if (!stabilityResults.devrilme_static_ok) {
+                    const factor = 2.0 / stabilityResults.GS_devrilme_static;
+                    B_new = Math.max(B_new, inputs.B * Math.pow(factor, 0.4));
+                    optimizationLog += '🔧 Devrilme (Statik): GS=' + stabilityResults.GS_devrilme_static.toFixed(2) + ' → Temel genişliği artırılmalı\n';
+                }
+                
+                if (!stabilityResults.devrilme_dynamic_ok) {
+                    const factor = 1.3 / stabilityResults.GS_devrilme_dynamic;
+                    B_new = Math.max(B_new, inputs.B * Math.pow(factor, 0.4));
+                    optimizationLog += '🔧 Devrilme (Dinamik): GS=' + stabilityResults.GS_devrilme_dynamic.toFixed(2) + ' → Temel genişliği artırılmalı\n';
+                }
+                
+                if (!stabilityResults.kayma_static_ok || !stabilityResults.kayma_dynamic_ok) {
+                    optimizationLog += '🔧 Kayma problemi: Temel dişi (shear key) eklenmesi ŞİDDETLE ÖNERİLİR!\n';
+                    B_new = Math.max(B_new, inputs.B * 1.1);
+                }
+                
+                if (!stabilityResults.tasima_static_ok) {
+                    const factor = 2.5 / stabilityResults.GS_tasima_static;
+                    B_new = Math.max(B_new, inputs.B * Math.pow(factor, 0.5));
+                    optimizationLog += '🔧 Taşıma Gücü: GS=' + stabilityResults.GS_tasima_static.toFixed(2) + ' → Temel genişliği artırılmalı\n';
+                }
+                
+                if (B_new > inputs.B) {
+                    document.getElementById('B').value = B_new.toFixed(2);
+                    optimizationLog += '\n✅ Temel genişliği: ' + inputs.B.toFixed(2) + ' m → ' + B_new.toFixed(2) + ' m\n\n';
+                    changesMade = true;
+                }
+            }
+            
+            // 2. Yapısal optimizasyon
+            if (!structuralResults.kesme_ok) {
+                const W_new = inputs.W_alt * Math.sqrt(structuralResults.V_d_kesme / structuralResults.V_cr);
+                document.getElementById('W_alt').value = W_new.toFixed(2);
+                
+                const W_ust_new = Math.max(0.3, inputs.W_ust * (W_new / inputs.W_alt));
+                document.getElementById('W_ust').value = W_ust_new.toFixed(2);
+                
+                optimizationLog += '🔧 Kesme Kapasitesi Yetersiz\n';
+                optimizationLog += '✅ Perde alt kalınlığı: ' + inputs.W_alt.toFixed(2) + ' m → ' + W_new.toFixed(2) + ' m\n';
+                optimizationLog += '✅ Perde üst kalınlığı: ' + inputs.W_ust.toFixed(2) + ' m → ' + W_ust_new.toFixed(2) + ' m\n\n';
+                changesMade = true;
+            }
+            
+            // 3. Hidrolik kontroller
+            if (hydResults.Fr > 1.2) {
+                optimizationLog += '⚠️ Hidrolik: Yüksek hızlı akım (Fr=' + hydResults.Fr.toFixed(2) + ')\n';
+                optimizationLog += '   → Kanal genişliğini artırın veya eğimi azaltın\n';
+                optimizationLog += '   → Enerji kırıcı yapılar düşünün\n\n';
+            }
+            
+            if (hydResults.H_p < 0.5) {
+                optimizationLog += '💡 Hidrolik: Hava payı ' + hydResults.H_p.toFixed(2) + ' m < 0.50 m (yetersiz)\n';
+                optimizationLog += '   → Meskun mahalde minimum 0.50 m önerilir\n\n';
+            }
+            
+            // 4. Zemin uyarıları
+            if (inputs.phi < 28) {
+                optimizationLog += '⚠️ Zemin: Düşük sürtünme açısı (φ=' + inputs.phi + '°)\n';
+                optimizationLog += '   → Daha iyi drenajlı geri dolgu kullanın (φ>32°)\n';
+                optimizationLog += '   → Geogrid takviye düşünün\n\n';
+            }
+            
+            // 5. Deprem uyarıları
+            if (seismicResults.k_h > 0.25) {
+                optimizationLog += '🌊 Deprem: Yüksek sismik yük (k_h=' + seismicResults.k_h.toFixed(3) + ')\n';
+                optimizationLog += '   → Temel dişi mutlaka ekleyin\n';
+                optimizationLog += '   → Etkin drenaj sistemi kritik\n';
+                optimizationLog += '   → Hafif geri dolgu malzemesi kullanın\n\n';
+            }
+            
+            // Sonuç mesajı
+            if (changesMade) {
+                optimizationLog += '═══════════════════════════════════\n';
+                optimizationLog += '✅ OPTİMİZASYON TAMAMLANDI\n\n';
+                optimizationLog += 'Değişiklikler uygulandı!\n';
+                optimizationLog += 'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayın.\n';
+                
+                alert(optimizationLog);
+                
+                // Otomatik hesaplama yap
+                if (confirm('Otomatik olarak yeni hesaplamayı başlatalım mı?')) {
+                    calculateAll();
+                }
+            } else {
+                optimizationLog += '═══════════════════════════════════\n';
+                optimizationLog += '✅ TASARIM ZATEN OPTİMAL\n\n';
+                optimizationLog += 'Geometrik değişiklik gerekmemektedir.\n';
+                
+                if (optimizationLog.includes('⚠️') || optimizationLog.includes('💡')) {
+                    optimizationLog += '\nAncak yukarıdaki önerileri dikkate alın.';
+                }
+                
+                alert(optimizationLog);
+            }
+        }
+
+        function resetForm() {
+            if (confirm('Tüm verileri sıfırlamak istediğinizden emin misiniz?')) {
+                location.reload();
+            }
+        }
+
+        function printReport() {
+            window.print();
+        }
+
+        function exportToExcel() {
+            alert('Excel export fonksiyonu yakında eklenecek!');
+        }
+
+        function saveCurrentDesign() {
+            if (!calculationResults.stability) {
+                alert('⚠️ Önce hesaplama yapmalısınız!');
+                return;
+            }
+            
+            savedDesign = {
+                inputs: getInputValues(),
+                results: JSON.parse(JSON.stringify(calculationResults)),
+                timestamp: new Date().toLocaleString('tr-TR')
+            };
+            
+            alert('✅ Mevcut tasarım kaydedildi!\n\n' +
+                  'Şimdi parametreleri değiştirebilir ve\n' +
+                  '"Tasarımları Karşılaştır" ile farkı görebilirsiniz.');
+        }
+
+        function compareDesigns() {
+            if (!savedDesign) {
+                alert('⚠️ Önce bir tasarım kaydetmelisiniz!\n\n' +
+                      '1. İlk tasarımı hesaplayın\n' +
+                      '2. "Tasarımı Kaydet" butonuna tıklayın\n' +
+                      '3. Parametreleri değiştirin\n' +
+                      '4. Tekrar hesaplayın\n' +
+                      '5. "Tasarımları Karşılaştır" ile farkı görün');
+                return;
+            }
+            
+            if (!calculationResults.stability) {
+                alert('⚠️ Yeni tasarım için hesaplama yapmalısınız!');
+                return;
+            }
+            
+            const current = {
+                inputs: getInputValues(),
+                results: calculationResults
+            };
+            
+            let html = '<div class="results-section" style="margin-top: 30px;">';
+            html += '<h3>📊 TASARIM KARŞILAŞTIRMASI</h3>';
+            html += '<p style="color: #666; margin-bottom: 20px;">Kaydedilen Tasarım: ' + savedDesign.timestamp + '</p>';
+            
+            // Geometrik parametreler
+            html += '<h4 style="color: #2a5298; margin-top: 20px;">Geometrik Parametreler</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Parametre</th><th>Eski</th><th>Yeni</th><th>Değişim</th></tr>';
+            
+            const params = [
+                ['Temel Genişliği', 'B', 'm'],
+                ['Temel Kalınlığı', 'TH', 'm'],
+                ['Perde Alt Kalınlığı', 'W_alt', 'm'],
+                ['Duvar Yüksekliği', 'H', 'm']
+            ];
+            
+            params.forEach(([label, key, unit]) => {
+                const oldVal = savedDesign.inputs[key];
+                const newVal = current.inputs[key];
+                const change = newVal - oldVal;
+                const changePercent = ((change / oldVal) * 100).toFixed(1);
+                const changeColor = change > 0 ? '#dc3545' : change < 0 ? '#28a745' : '#666';
+                const arrow = change > 0 ? '↑' : change < 0 ? '↓' : '→';
+                
+                html += '<tr><td>' + label + '</td><td>' + oldVal.toFixed(2) + ' ' + unit + '</td><td>' + 
+                       newVal.toFixed(2) + ' ' + unit + '</td><td style="color: ' + changeColor + '; font-weight: bold;">' +
+                       arrow + ' ' + Math.abs(change).toFixed(2) + ' ' + unit + ' (' + changePercent + '%)</td></tr>';
+            });
+            
+            html += '</table></div>';
+            
+            // Stabilite
+            html += '<h4 style="color: #2a5298; margin-top: 20px;">Güvenlik Sayıları</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Kontrol</th><th>Eski</th><th>Yeni</th><th>Min</th><th>Durum</th></tr>';
+            
+            const stabilities = [
+                ['Devrilme (Statik)', 'GS_devrilme_static', 2.0],
+                ['Kayma (Statik)', 'GS_kayma_static', 1.5],
+                ['Taşıma (Statik)', 'GS_tasima_static', 2.5],
+                ['Devrilme (Dinamik)', 'GS_devrilme_dynamic', 1.3],
+                ['Kayma (Dinamik)', 'GS_kayma_dynamic', 1.1]
+            ];
+            
+            stabilities.forEach(([label, key, minVal]) => {
+                const oldVal = savedDesign.results.stability[key];
+                const newVal = current.results.stability[key];
+                const oldOk = oldVal >= minVal;
+                const newOk = newVal >= minVal;
+                
+                let status = '';
+                if (!oldOk && newOk) status = '<span style="color: #28a745;">✓ İYİLEŞTİ</span>';
+                else if (oldOk && !newOk) status = '<span style="color: #dc3545;">✗ KÖTÜLEŞTI</span>';
+                else if (newVal > oldVal) status = '<span style="color: #28a745;">↑</span>';
+                else if (newVal < oldVal) status = '<span style="color: #ffc107;">↓</span>';
+                else status = '<span style="color: #666;">→</span>';
+                
+                html += '<tr><td>' + label + '</td><td>' + oldVal.toFixed(2) + '</td><td><strong>' + 
+                       newVal.toFixed(2) + '</strong></td><td>' + minVal.toFixed(1) + '</td><td>' + status + '</td></tr>';
+            });
+            
+            html += '</table></div>';
+            
+            // Maliyet
+            html += '<h4 style="color: #2a5298; margin-top: 20px;">Maliyet Analizi</h4>';
+            html += '<div class="table-container"><table>';
+            html += '<tr><th>Kalem</th><th>Eski</th><th>Yeni</th><th>Fark (%)</th></tr>';
+            
+            const metrajItems = [
+                ['Beton C30', 'V_beton_toplam', 'm³'],
+                ['Kalıp', 'A_kalip_toplam', 'm²'],
+                ['Donatı', 'W_donati', 'ton']
+            ];
+            
+            metrajItems.forEach(([label, key, unit]) => {
+                const oldVal = savedDesign.results.metraj[key];
+                const newVal = current.results.metraj[key];
+                const fark = newVal - oldVal;
+                const farkPercent = ((fark / oldVal) * 100).toFixed(1);
+                const color = fark > 0 ? '#dc3545' : '#28a745';
+                
+                html += '<tr><td>' + label + '</td><td>' + oldVal.toFixed(2) + ' ' + unit + '</td><td>' + 
+                       newVal.toFixed(2) + ' ' + unit + '</td><td style="color: ' + color + ';"><strong>' + 
+                       (fark > 0 ? '+' : '') + fark.toFixed(2) + ' (' + farkPercent + '%)</strong></td></tr>';
+            });
+            
+            html += '</table></div>';
+            
+            html += '</div>';
+            
+            document.getElementById('comparison-area').innerHTML = html;
+            document.getElementById('comparison-area').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function exportToExcel() {
+            alert('Excel export fonksiyonu yakında eklenecek!');
+        }
+
+        // Sayfa yüklendiğinde örnek hesaplama
+        window.onload = function() {
+            console.log('Betonarme U-Kanal Tasarım Uygulaması hazır!');
+        };
+    </script>
+</body>
+</html>
