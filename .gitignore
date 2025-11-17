@@ -1,0 +1,76 @@
+# IDE ve Editör dosyaları
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+*~
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+pip-log.txt
+
+# OS dosyaları
+.DS_Store
+Thumbs.db
+*.log
+
+# Geçici dosyalar
+*.tmp
+*.bak
+*.backup
+*.swp
+.~*
+
+# Yapı çıktıları
+dist/
+build/
+*.o
+*.a
+
+# İstatistik ve rapor dosyaları (isteğe bağlı)
+*.xlsx
+*.xls
+*.csv
+*.pdf
+output/
+results/
+
+# Claude Code ayarları (opsiyonel - eğer kişisel ayarlarsa)
+.claude/settings.local.json
+
+# Çevre değişkenleri (GÜVENLİK)
+.env
+.env.local
+.env.*.local
+secrets/
+credentials/
+*.key
+*.pem
+
+# Yedek dosyalar
+*.backup
+*.old
+*-bak
+backup/
+
+# Derlenmiş dosyalar ve cache
+*.class
+*.jar
+*.zip
