@@ -1031,9 +1031,27 @@
         function calculateSeismic(inputs, geoResults) {
             const results = {};
 
+            // Giriş değerlerinin kontrol edilmesi
+            if (!inputs || !geoResults || !inputs.H || inputs.H <= 0) {
+                console.error('calculateSeismic: Geçersiz giriş değerleri');
+                return {
+                    T: 0,
+                    F_s: 1.3,
+                    F_1: 1.4,
+                    S_D: 0,
+                    k_h: 0,
+                    k_v: 0,
+                    K_ae: 0.3,
+                    P_t: 0,
+                    Delta_P: 0,
+                    P_t_arm: 0,
+                    theta: 0
+                };
+            }
+
             // İstinat yapısı periyodu hesabı (TBDY 2018 için kontrol)
             // Basitleştirilmiş formül: T ≈ 0.05 * H (konsol istinat için)
-            const T = 0.05 * inputs.H; // saniye
+            const T = Math.max(0.05 * inputs.H, 0.05); // saniye
             results.T = T;
 
             // TBDY 2018 Tablo 16.1 - Zemin sınıfı katsayıları
@@ -1338,11 +1356,36 @@
         function calculateStructural(inputs, geoResults, seismicResults, hydraulicsResults) {
             const results = {};
 
+            // Giriş değerlerinin kontrol edilmesi
+            if (!inputs || !geoResults || !seismicResults) {
+                console.error('calculateStructural: Geçersiz giriş değerleri');
+                return {
+                    fck: 30,
+                    fcd: 20,
+                    fctd: 2.5,
+                    fyk: 420,
+                    fyd: 365,
+                    V_d_static: 0,
+                    V_d_earthquake: 0,
+                    V_d_max: 0,
+                    M_d_perde: 0,
+                    As_perde_gerekli: 0,
+                    As_min_perde: 0,
+                    As_perde_tasarim: 0,
+                    donati_capi: 16,
+                    donati_araligi: 200,
+                    donati_adet: 5,
+                    V_d_kesme: 0,
+                    V_cr: 0,
+                    kesme_ok: true
+                };
+            }
+
             // Malzeme özellikleri - Standarda göre
             const fck_values = {
                 'C25': 25, 'C30': 30, 'C35': 35, 'C40': 40
             };
-            const fck = fck_values[inputs.beton_sinifi];
+            const fck = fck_values[inputs.beton_sinifi] || 30;
             
             if (inputs.yapisal_standart === 'TS500') {
                 // TS 500:2000
