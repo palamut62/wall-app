@@ -2488,8 +2488,17 @@
             document.getElementById('stabilite-sonuc').innerHTML = html;
 
             // Yapısal tasarım
-            const structuralResults = calculateStructural(inputs, geoResults, seismicResults, hydResults);
-            calculationResults.structural = structuralResults;
+            let structuralResults;
+            try {
+                structuralResults = calculateStructural(inputs, geoResults, seismicResults, hydResults);
+                calculationResults.structural = structuralResults;
+            } catch (error) {
+                console.error('calculateStructural hatası:', error);
+                alert('Yapısal tasarım hesaplamasında hata oluştu:\n' + error.message);
+                document.getElementById('yapisal-sonuc').innerHTML =
+                    '<div class="warning-box"><strong>HATA:</strong> ' + error.message + '</div>';
+                return; // Fonksiyondan çık
+            }
             
             html = '<div class="info-box"><strong>TS 500 - Betonarme Yapıların Hesap ve Yapım Kuralları</strong></div>';
             
