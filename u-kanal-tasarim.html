@@ -2525,7 +2525,23 @@
             html += '<div class="result-item"><span class="result-label">Tasarım Kesme Kuvveti (V<sub>d</sub>)</span><span class="result-value">' + structuralResults.V_d_kesme.toFixed(2) + ' kN</span></div>';
             html += '<div class="result-item"><span class="result-label">Beton Kesme Kapasitesi (V<sub>cr</sub>)</span><span class="result-value">' + structuralResults.V_cr.toFixed(2) + ' kN</span></div>';
             html += '<div class="result-item"><span class="result-label"><strong>Kesme Kontrolü</strong></span><span class="result-value ' + (structuralResults.kesme_ok ? 'success">V<sub>d</sub> ≤ V<sub>cr</sub> ✓ UYGUN' : 'danger">V<sub>d</sub> > V<sub>cr</sub> ✗ UYGUN DEĞİL') + '</span></div>';
-            
+
+            // Kesme Donatısı (Etriye) - TS 500 Madde 8.5
+            html += '<h4 style="margin-top: 20px; color: #2a5298;">Kesme Donatısı (Etriye) - TS 500 §8.5</h4>';
+            html += '<div class="formula-box"><strong>Etriye Hesabı:</strong> A<sub>sw</sub>/s = (V<sub>d</sub> - V<sub>cr</sub>) / (0.9 × d × f<sub>ywd</sub>)</div>';
+
+            if (structuralResults.kesme_donatisi_gerekli) {
+                html += '<div class="result-item"><span class="result-label">Tasarım Kesme Kuvveti (V<sub>d</sub>)</span><span class="result-value">' + structuralResults.V_d_kesme.toFixed(2) + ' kN</span></div>';
+                html += '<div class="result-item"><span class="result-label">Beton Kesme Kapasitesi (V<sub>cr</sub>)</span><span class="result-value">' + structuralResults.V_cr.toFixed(2) + ' kN</span></div>';
+                html += '<div class="result-item"><span class="result-label">Aşırı Kesme Kuvveti (V<sub>d</sub> - V<sub>cr</sub>)</span><span class="result-value warning">' + (structuralResults.V_d_kesme - structuralResults.V_cr).toFixed(2) + ' kN</span></div>';
+                html += '<div class="result-item"><span class="result-label">Gerekli Etriye Donatısı (A<sub>sw</sub>/s)</span><span class="result-value">' + structuralResults.A_sw_s_required.toFixed(4) + ' mm²/mm = ' + structuralResults.A_sw_s_required_mm2_m.toFixed(2) + ' mm²/m</span></div>';
+                html += '<div class="result-item"><span class="result-label">Minimum Etriye</span><span class="result-value">' + (0.3 * inputs.W_alt * 1000 * structuralResults.fctd / structuralResults.fyk).toFixed(2) + ' mm²/m</span></div>';
+                html += '<div class="success-box"><strong>Önerilen Etriye:</strong><br>' + structuralResults.stirrup_recommendation + '</div>';
+                html += '<div class="info-box"><strong>Maksimum Etriye Aralığı (TS 500 §8.5.3):</strong><br>s<sub>max</sub> = min(0.75d, 300mm) = ' + structuralResults.stirrup_spacing_max.toFixed(0) + ' mm</div>';
+            } else {
+                html += '<div class="success-box"><strong>✓ Etriye Gerekli Değil</strong><br>Beton kesme kapasitesi yeterli (V<sub>d</sub> ≤ V<sub>cr</sub>)<br>Uygulamada minimum donatı (Φ8 @200-250mm) tavsiye edilebilir.</div>';
+            }
+
             // Yapısal problemler için çözüm önerileri
             if (!structuralResults.kesme_ok || !structuralResults.aralık_ok) {
                 html += generateStructuralSolutions(inputs, structuralResults);
