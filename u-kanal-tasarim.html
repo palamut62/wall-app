@@ -2255,19 +2255,39 @@
             // Hidrolik hesaplar
             const hydResults = calculateHydraulics(inputs);
             calculationResults.hydraulics = hydResults;
-            
+
+            // NaN değerlerini temizle
+            const cleanResults = (obj) => {
+                for (let key in obj) {
+                    if (typeof obj[key] === 'number' && isNaN(obj[key])) {
+                        obj[key] = 0;
+                    }
+                }
+                return obj;
+            };
+            cleanResults(hydResults);
+
             let html = '<div class="formula-box"><strong>Manning Denklemi:</strong> V = (1/n) × R<sub>h</sub><sup>2/3</sup> × S<sub>o</sub><sup>1/2</sup></div>';
-            html += '<div class="result-item"><span class="result-label">Su Derinliği (h<sub>su</sub>)</span><span class="result-value">' + hydResults.h_su.toFixed(2) + ' m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Akım Hızı (V)</span><span class="result-value">' + hydResults.V.toFixed(2) + ' m/sn</span></div>';
-            html += '<div class="result-item"><span class="result-label">Akım Alanı (A)</span><span class="result-value">' + hydResults.A.toFixed(2) + ' m²</span></div>';
-            html += '<div class="result-item"><span class="result-label">Hidrolik Yarıçap (R<sub>h</sub>)</span><span class="result-value">' + hydResults.R_h.toFixed(3) + ' m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Islak Çevre (P)</span><span class="result-value">' + hydResults.P.toFixed(2) + ' m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Hava Payı (H<sub>p</sub>)</span><span class="result-value">' + hydResults.H_p.toFixed(2) + ' m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Hidrolik Yükseklik (H<sub>h</sub>)</span><span class="result-value">' + hydResults.H_h.toFixed(2) + ' m</span></div>';
-            html += '<div class="result-item"><span class="result-label">Froude Sayısı (Fr)</span><span class="result-value">' + hydResults.Fr.toFixed(3) + '</span></div>';
-            html += '<div class="result-item"><span class="result-label">Akım Tipi</span><span class="result-value ' + (hydResults.Fr < 1 ? 'success' : 'warning') + '">' + hydResults.flow_type + '</span></div>';
+
+            // NaN kontrolü ile güvenli gösterim
+            const formatValue = (value, decimals = 2) => {
+                if (isNaN(value) || value === undefined || value === null) {
+                    return '--';
+                }
+                return value.toFixed(decimals);
+            };
+
+            html += '<div class="result-item"><span class="result-label">Su Derinliği (h<sub>su</sub>)</span><span class="result-value">' + formatValue(hydResults.h_su, 2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Hızı (V)</span><span class="result-value">' + formatValue(hydResults.V, 2) + ' m/sn</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Alanı (A)</span><span class="result-value">' + formatValue(hydResults.A, 2) + ' m²</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hidrolik Yarıçap (R<sub>h</sub>)</span><span class="result-value">' + formatValue(hydResults.R_h, 3) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Islak Çevre (P)</span><span class="result-value">' + formatValue(hydResults.P, 2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hava Payı (H<sub>p</sub>)</span><span class="result-value">' + formatValue(hydResults.H_p, 2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hidrolik Yükseklik (H<sub>h</sub>)</span><span class="result-value">' + formatValue(hydResults.H_h, 2) + ' m</span></div>';
+            html += '<div class="result-item"><span class="result-label">Froude Sayısı (Fr)</span><span class="result-value">' + formatValue(hydResults.Fr, 3) + '</span></div>';
+            html += '<div class="result-item"><span class="result-label">Akım Tipi</span><span class="result-value ' + (hydResults.Fr < 1 ? 'success' : 'warning') + '">' + (hydResults.flow_type || 'Hesaplanamadı') + '</span></div>';
             html += '<div class="formula-box"><strong>Hidrostatik Basınç:</strong> P<sub>w</sub> = (1/2) × γ<sub>w</sub> × h<sub>su</sub>²</div>';
-            html += '<div class="result-item"><span class="result-label">Hidrostatik Basınç (P<sub>w</sub>)</span><span class="result-value">' + hydResults.P_w.toFixed(2) + ' kN/m²</span></div>';
+            html += '<div class="result-item"><span class="result-label">Hidrostatik Basınç (P<sub>w</sub>)</span><span class="result-value">' + formatValue(hydResults.P_w, 2) + ' kN/m²</span></div>';
             
             // Hidrolik uyarılar ve öneriler
             if (hydResults.Fr > 1.2) {
@@ -2331,6 +2351,7 @@
             // Geoteknik hesaplar
             const geoResults = calculateGeotechnics(inputs);
             calculationResults.geotechnics = geoResults;
+            cleanResults(geoResults);
             
             html = '<div class="formula-box"><strong>Rankine Teorisi:</strong> K<sub>a</sub> = tan²(45° - φ/2), K<sub>p</sub> = tan²(45° + φ/2)</div>';
             html += '<div class="result-item"><span class="result-label">Aktif Toprak Basıncı Katsayısı (K<sub>a</sub>)</span><span class="result-value">' + geoResults.K_a.toFixed(3) + '</span></div>';
@@ -2409,6 +2430,7 @@
             // Deprem hesapları
             const seismicResults = calculateSeismic(inputs, geoResults);
             calculationResults.seismic = seismicResults;
+            cleanResults(seismicResults);
             
             html = '<div class="info-box"><strong>TBDY 2018 Pseudo-Statik Yaklaşım (Tam Mononobe-Okabe)</strong></div>';
             
@@ -2498,7 +2520,8 @@
             // Stabilite kontrolleri
             const stabilityResults = calculateStability(inputs, geoResults, seismicResults);
             calculationResults.stability = stabilityResults;
-            
+            cleanResults(stabilityResults);
+
             html = '<h4 style="color: #2a5298;">STATİK DURUM KONTROLLERI</h4>';
             html += '<div class="table-container"><table>';
             html += '<tr><th>Kontrol Tipi</th><th>Formül</th><th>Hesaplanan GS</th><th>Minimum GS</th><th>Durum</th></tr>';
@@ -2543,6 +2566,7 @@
             try {
                 structuralResults = calculateStructural(inputs, geoResults, seismicResults, hydResults);
                 calculationResults.structural = structuralResults;
+                cleanResults(structuralResults);
             } catch (error) {
                 console.error('calculateStructural hatası:', error);
                 alert('Yapısal tasarım hesaplamasında hata oluştu:\n' + error.message);
@@ -2612,6 +2636,7 @@
             // Metraj hesapları
             const metrajResults = calculateMetraj(inputs);
             calculationResults.metraj = metrajResults;
+            cleanResults(metrajResults);
             
             html = '<h4 style="color: #2a5298;">Beton Metrajı</h4>';
             html += '<div class="table-container"><table>';
