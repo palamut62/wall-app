@@ -2503,8 +2503,8 @@
             html += '<h4 style="margin-top: 20px; color: #2a5298;">Yük Kombinasyonları</h4>';
             html += '<div class="formula-box"><strong>Statik:</strong> V<sub>d</sub> = 1.4G + 1.6H + 1.6Q</div>';
             html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Statik)</span><span class="result-value">' + structuralResults.V_d_static.toFixed(2) + ' kN/m</span></div>';
-            html += '<div class="formula-box"><strong>Dinamik:</strong> V<sub>d</sub> = 1.0G + 1.0H + 1.0E</div>';
-            html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Dinamik)</span><span class="result-value">' + structuralResults.V_d_dynamic.toFixed(2) + ' kN/m</span></div>';
+            html += '<div class="formula-box"><strong>Deprem Durumu:</strong> V<sub>d</sub> = 1.0G + 0.3Q + 1.0E</div>';
+            html += '<div class="result-item"><span class="result-label">Tasarım Yükü (Deprem)</span><span class="result-value">' + structuralResults.V_d_earthquake.toFixed(2) + ' kN/m</span></div>';
             html += '<div class="result-item"><span class="result-label"><strong>Maksimum Tasarım Yükü</strong></span><span class="result-value success">' + structuralResults.V_d_max.toFixed(2) + ' kN/m</span></div>';
             
             html += '<h4 style="margin-top: 20px; color: #2a5298;">Perde Donatı Hesabı</h4>';
