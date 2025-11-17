@@ -793,19 +793,41 @@
 
         function calculateHydraulics(inputs) {
             const results = {};
-            
+
+            // Giriş değerlerinin kontrol edilmesi
+            if (!inputs.Q_T || inputs.Q_T <= 0) {
+                results.h_su = 0;
+                results.V = 0;
+                results.A = 0;
+                results.R_h = 0;
+                results.P = inputs.b;
+                results.H_p = 0.3;
+                results.H_h = 0.3;
+                results.Fr = 0;
+                results.flow_type = "Bilgi yok";
+                results.P_w = 0;
+                return results;
+            }
+
             // Manning denklemi ile iteratif su derinliği hesabı
-            let h_su = 2.0; // Başlangıç tahmini
-            let tolerance = 0.001;
-            let maxIter = 100;
-            
+            let h_su = Math.max(0.1, inputs.Q_T / (inputs.b * 2)); // Daha iyi başlangıç tahmini
+            let tolerance = 0.01;
+            let maxIter = 50;
+            let converged = false;
+
             for (let i = 0; i < maxIter; i++) {
                 const A = inputs.b * h_su;
                 const P = inputs.b + 2 * h_su;
                 const R_h = A / P;
+
+                if (R_h <= 0 || inputs.n <= 0 || inputs.So <= 0) {
+                    console.error('Geçersiz hidrolik parametreleri:', {R_h, n: inputs.n, So: inputs.So});
+                    break;
+                }
+
                 const V = (1 / inputs.n) * Math.pow(R_h, 2/3) * Math.pow(inputs.So, 1/2);
                 const Q_calc = A * V;
-                
+
                 const error = Math.abs(Q_calc - inputs.Q_T);
                 if (error < tolerance) {
                     results.h_su = h_su;
@@ -813,24 +835,53 @@
                     results.A = A;
                     results.R_h = R_h;
                     results.P = P;
+                    converged = true;
                     break;
                 }
-                
-                // Newton-Raphson yaklaşımı
-                h_su = h_su + (inputs.Q_T - Q_calc) / (inputs.b * V);
+
+                // Geliştirilmiş Newton-Raphson yaklaşımı
+                if (V > 0 && !isNaN(V)) {
+                    const dQ_dh = inputs.b * V + A * (1 / inputs.n) * (2/3) * Math.pow(R_h, -1/3) *
+                                  (inputs.b * P - A * 2) / (P * P) * Math.pow(inputs.So, 1/2);
+
+                    if (Math.abs(dQ_dh) > 0.001) {
+                        h_su = h_su + 0.5 * (inputs.Q_T - Q_calc) / dQ_dh;
+                        h_su = Math.max(0.01, Math.min(h_su, 20)); // Sınır kontrol
+                    } else {
+                        break;
+                    }
+                } else {
+                    break;
+                }
             }
-            
+
+            // Değerlerin tanımlanmadığı durumda varsayılan değerler
+            if (!converged || isNaN(results.h_su)) {
+                // Basit yaklaşım: Manning denklemi doğrusal çözüm
+                const h_estimate = Math.pow((inputs.Q_T * inputs.n) / (inputs.b * Math.pow(inputs.So, 0.5)), 0.6);
+                results.h_su = Math.max(0.1, h_estimate);
+                results.A = inputs.b * results.h_su;
+                results.P = inputs.b + 2 * results.h_su;
+                results.R_h = results.A / results.P;
+                results.V = (1 / inputs.n) * Math.pow(results.R_h, 2/3) * Math.pow(inputs.So, 1/2);
+            }
+
             // Hava payı (Freeboard)
             results.H_p = Math.max(0.3, 0.1 * results.h_su);
             results.H_h = results.h_su + results.H_p;
-            
+
             // Froude sayısı
-            results.Fr = results.V / Math.sqrt(9.81 * results.h_su);
-            results.flow_type = results.Fr < 1 ? "Kritik Altı (Sakin)" : results.Fr > 1 ? "Kritik Üstü (Hızlı)" : "Kritik";
-            
+            if (results.h_su > 0) {
+                results.Fr = results.V / Math.sqrt(9.81 * results.h_su);
+                results.flow_type = results.Fr < 1 ? "Kritik Altı (Sakin)" : results.Fr > 1 ? "Kritik Üstü (Hızlı)" : "Kritik";
+            } else {
+                results.Fr = 0;
+                results.flow_type = "Hesaplanamadı";
+            }
+
             // Hidrostatik basınç
             results.P_w = 0.5 * inputs.gamma_su * Math.pow(results.h_su, 2);
-            
+
             return results;
         }
 
