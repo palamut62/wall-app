@@ -443,6 +443,126 @@
             margin: 15px 0;
             border: 2px solid #dc3545;
         }
+
+        /* Modal Dialog Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-dialog {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            font-size: 1.5em;
+            color: #333;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        .modal-body {
+            padding: 20px;
+            color: #555;
+            line-height: 1.6;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .modal-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .modal-button-primary {
+            background: #2a5298;
+            color: white;
+        }
+
+        .modal-button-primary:hover {
+            background: #1e3c72;
+        }
+
+        .modal-button-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .modal-button-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .modal-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -732,6 +852,20 @@
         </div>
     </div>
 
+    <!-- Modal Dialog Element -->
+    <div id="modal-overlay" class="modal-overlay">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="modal-title">Bilgi</h2>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+            <div class="modal-footer">
+                <button class="modal-button modal-button-primary" onclick="closeModal()">Tamam</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let calculationResults = {};
         let savedDesign = null;
@@ -777,6 +911,7 @@
                 
                 // Deprem
                 SDS: parseFloat(document.getElementById('SDS').value),
+                SD1: parseFloat(document.getElementById('SD1').value),
                 zemin_sinifi: document.getElementById('zemin_sinifi').value,
                 r: parseFloat(document.getElementById('r').value),
                 tasarim_yaklasimi: document.getElementById('tasarim_yaklasimi').value,
@@ -2220,17 +2355,19 @@
                 const newWust = parseFloat(document.getElementById('W_ust').value) * ratio;
                 document.getElementById('W_ust').value = Math.max(0.3, newWust).toFixed(2);
                 
-                alert('✓ Perde kalınlıkları güncellendi:\n' +
-                      '  • Alt kalınlık: ' + value + ' m\n' +
-                      '  • Üst kalınlık: ' + Math.max(0.3, newWust).toFixed(2) + ' m\n\n' +
-                      'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayın.');
+                showDialog('✓ Perde Kalınlıkları Güncellendi',
+                    '  • Alt kalınlık: ' + value + ' m\n' +
+                    '  • Üst kalınlık: ' + Math.max(0.3, newWust).toFixed(2) + ' m\n\n' +
+                    'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayın.');
             }
         }
 
         function autoFix(action, value) {
             if (action === 'increase_B') {
                 document.getElementById('B').value = value;
-                alert('✓ Temel genişliği ' + value + ' m olarak güncellendi.\n\nŞimdi "Tüm Hesaplamaları Yap" butonuna tıklayarak yeniden hesaplayın.');
+                showDialog('✓ Temel Genişliği Güncellendi',
+                    'Temel genişliği ' + value + ' m olarak güncellendi.\n\n' +
+                    'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayarak yeniden hesaplayın.');
             }
         }
 
@@ -2612,7 +2749,7 @@
                 cleanResults(structuralResults);
             } catch (error) {
                 console.error('calculateStructural hatası:', error);
-                alert('Yapısal tasarım hesaplamasında hata oluştu:\n' + error.message);
+                showDialog('❌ Hata', 'Yapısal tasarım hesaplamasında hata oluştu:\n' + error.message);
                 document.getElementById('yapisal-sonuc').innerHTML =
                     '<div class="warning-box"><strong>HATA:</strong> ' + error.message + '</div>';
                 return; // Fonksiyondan çık
@@ -2870,7 +3007,7 @@
             tabs[1].classList.add('active');
             
             // Başarı mesajı göster
-            alert('✓ Hesaplamalar tamamlandı! Sonuçları inceleyin.');
+            showDialog('✓ Başarılı', 'Hesaplamalar tamamlandı! Sonuçları inceleyin.');
         }
 
         function resetForm() {
@@ -2985,8 +3122,8 @@
                 optimizationLog += '✅ OPTİMİZASYON TAMAMLANDI\n\n';
                 optimizationLog += 'Değişiklikler uygulandı!\n';
                 optimizationLog += 'Şimdi "Tüm Hesaplamaları Yap" butonuna tıklayın.\n';
-                
-                alert(optimizationLog);
+
+                showDialog('📊 Optimizasyon Önerileri', optimizationLog);
                 
                 // Otomatik hesaplama yap
                 if (confirm('Otomatik olarak yeni hesaplamayı başlatalım mı?')) {
@@ -3000,8 +3137,8 @@
                 if (optimizationLog.includes('⚠️') || optimizationLog.includes('💡')) {
                     optimizationLog += '\nAncak yukarıdaki önerileri dikkate alın.';
                 }
-                
-                alert(optimizationLog);
+
+                showDialog('📊 Optimizasyon Analizi', optimizationLog);
             }
         }
 
@@ -3016,12 +3153,12 @@
         }
 
         function exportToExcel() {
-            alert('Excel export fonksiyonu yakında eklenecek!');
+            showDialog('ℹ️ Bilgi', 'Excel export fonksiyonu yakında eklenecek!');
         }
 
         function saveCurrentDesign() {
             if (!calculationResults.stability) {
-                alert('⚠️ Önce hesaplama yapmalısınız!');
+                showDialog('⚠️ Uyarı', 'Önce hesaplama yapmalısınız!');
                 return;
             }
             
@@ -3031,24 +3168,26 @@
                 timestamp: new Date().toLocaleString('tr-TR')
             };
             
-            alert('✅ Mevcut tasarım kaydedildi!\n\n' +
-                  'Şimdi parametreleri değiştirebilir ve\n' +
-                  '"Tasarımları Karşılaştır" ile farkı görebilirsiniz.');
+            showDialog('✅ Başarılı',
+                'Mevcut tasarım kaydedildi!\n\n' +
+                'Şimdi parametreleri değiştirebilir ve\n' +
+                '"Tasarımları Karşılaştır" ile farkı görebilirsiniz.');
         }
 
         function compareDesigns() {
             if (!savedDesign) {
-                alert('⚠️ Önce bir tasarım kaydetmelisiniz!\n\n' +
-                      '1. İlk tasarımı hesaplayın\n' +
-                      '2. "Tasarımı Kaydet" butonuna tıklayın\n' +
-                      '3. Parametreleri değiştirin\n' +
-                      '4. Tekrar hesaplayın\n' +
-                      '5. "Tasarımları Karşılaştır" ile farkı görün');
+                showDialog('⚠️ Uyarı',
+                    'Önce bir tasarım kaydetmelisiniz!\n\n' +
+                    '1. İlk tasarımı hesaplayın\n' +
+                    '2. "Tasarımı Kaydet" butonuna tıklayın\n' +
+                    '3. Parametreleri değiştirin\n' +
+                    '4. Tekrar hesaplayın\n' +
+                    '5. "Tasarımları Karşılaştır" ile farkı görün');
                 return;
             }
             
             if (!calculationResults.stability) {
-                alert('⚠️ Yeni tasarım için hesaplama yapmalısınız!');
+                showDialog('⚠️ Uyarı', 'Yeni tasarım için hesaplama yapmalısınız!');
                 return;
             }
             
@@ -3151,9 +3290,25 @@
             document.getElementById('comparison-area').scrollIntoView({ behavior: 'smooth' });
         }
 
-        function exportToExcel() {
-            alert('Excel export fonksiyonu yakında eklenecek!');
+        // Modal Dialog Functions
+        function showDialog(title, message) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-body').textContent = message;
+            document.getElementById('modal-overlay').classList.add('active');
         }
+
+        function closeModal() {
+            document.getElementById('modal-overlay').classList.remove('active');
+        }
+
+        // Close modal when clicking on overlay
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('modal-overlay').addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeModal();
+                }
+            });
+        });
 
         // Sayfa yüklendiğinde örnek hesaplama
         window.onload = function() {
