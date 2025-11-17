@@ -568,8 +568,13 @@
                     <h3>Deprem Parametreleri (TBDY 2018)</h3>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>S<sub>DS</sub> (Kısa Periyot Spektral İvme)</label>
+                            <label>S<sub>DS</sub> (Kısa Periyot Spektral İvme - T ≤ T<sub>A</sub>)</label>
                             <input type="number" id="SDS" value="0.8" step="0.05">
+                            <span class="unit">g (AFAD haritasından)</span>
+                        </div>
+                        <div class="form-group">
+                            <label>S<sub>D1</sub> (1 Saniye Spektral İvme - T > T<sub>B</sub>)</label>
+                            <input type="number" id="SD1" value="0.35" step="0.05">
                             <span class="unit">g (AFAD haritasından)</span>
                         </div>
                         <div class="form-group">
@@ -584,9 +589,9 @@
                             <span class="unit">Zemin etüdüne göre</span>
                         </div>
                         <div class="form-group">
-                            <label>Azaltma Katsayısı (r)</label>
-                            <input type="number" id="r" value="1.5" step="0.1">
-                            <span class="unit">Konsol: 2.0, Ankrajlı: 1.5</span>
+                            <label>Azaltma Katsayısı (r) - TBDY 2018 Tablo 16.4</label>
+                            <input type="number" id="r" value="2.0" step="0.1" min="1.5" max="2.5">
+                            <span class="unit">Konsol: 2.0-2.5, Ankrajlı: 1.5 (TS 500)</span>
                         </div>
                         <div class="form-group">
                             <label>Tasarım Yaklaşımı</label>
@@ -883,10 +888,30 @@
 
         function calculateGeotechnics(inputs) {
             const results = {};
-            
-            // Aktif toprak basıncı katsayısı (Rankine - basit durum)
+
+            // TS 500 ve Geoteknik Uygulamaları - Duvar-zemin sürtünme kontrolü
+            // δ ≤ (2/3)φ sınırlaması
             const phi_rad = inputs.phi * Math.PI / 180;
             const delta_rad = inputs.delta * Math.PI / 180;
+            const delta_max_rad = (2/3) * phi_rad;
+            const delta_max_deg = delta_max_rad * 180 / Math.PI;
+
+            results.delta_max = delta_max_deg;
+            results.delta_warning = false;
+
+            if (inputs.delta > delta_max_deg) {
+                results.delta_warning = true;
+                results.delta_warning_msg =
+                    'UYARI: δ = ' + inputs.delta.toFixed(2) + '° > (2/3)φ = ' +
+                    delta_max_deg.toFixed(2) + '°. Duvar-zemin sürtünme açısı çok yüksek! ' +
+                    'TS 500 ve geoteknik standartlarına göre δ ≤ (2/3)φ olmalıdır. ' +
+                    'Hesaplamalar δ = ' + delta_max_deg.toFixed(2) + '° ile yapılacaktır.';
+
+                // Uyarı durumunda δ'yi sınırlı değere ayarla
+                inputs.delta = delta_max_deg;
+            }
+
+            // Aktif toprak basıncı katsayısı (Rankine - basit durum)
             results.K_a_rankine = Math.pow(Math.tan(Math.PI/4 - phi_rad/2), 2);
 
             // Coulomb teorisi (genel durum - duvar sürtünmesi dahil)
@@ -961,8 +986,6 @@
             results.T = T;
 
             // TBDY 2018 Tablo 16.1 - Zemin sınıfı katsayıları
-            // Not: Bu değerler kısa periyot bölgesi (T ≤ T_A) için geçerlidir
-            // İstinat yapıları genellikle T < 0.2s olduğundan S_DS kullanımı uygundur
             const F_s_values = {
                 'ZA': 0.8,
                 'ZB': 0.9,
@@ -971,21 +994,54 @@
                 'ZE': 2.4
             };
 
-            const F_s = F_s_values[inputs.zemin_sinifi];
-            results.F_s = F_s;
+            // TBDY 2018 - Uzun periyot spektral ivme faktörleri (F_1)
+            const F_1_values = {
+                'ZA': 0.8,
+                'ZB': 0.8,
+                'ZC': 1.4,
+                'ZD': 2.0,
+                'ZE': 3.5
+            };
 
-            // Periyot kontrolü ve uyarı
-            if (T > 0.2) {
-                results.periyot_uyari = 'Periyot > 0.2s. F_s değerleri S_D1 ile kontrol edilmeli.';
+            const F_s = F_s_values[inputs.zemin_sinifi];
+            const F_1 = F_1_values[inputs.zemin_sinifi];
+            results.F_s = F_s;
+            results.F_1 = F_1;
+
+            // TBDY 2018 - Periyot sınırları (T_A, T_B, T_C)
+            // T_A = 0.2s (sabit), T_B = T_A (basitleştirilmiş), T_C = 1.5s (genel kabuller)
+            const T_A = 0.2;
+            const T_B = T_A;
+            const T_C = 1.5;
+            results.T_A = T_A;
+            results.T_B = T_B;
+            results.T_C = T_C;
+
+            // Spektral ivme hesabı - Bölgesel kontrol
+            let S_D = 0;
+            if (T <= T_A) {
+                // Kısa periyot bölgesi (T ≤ T_A)
+                S_D = inputs.SDS * F_s;
+                results.spektral_bolge = 'Kısa Periyot (T ≤ T_A): S_D = S_DS × F_s';
+            } else if (T > T_A && T <= T_C) {
+                // Uzun periyot bölgesi (T_A < T ≤ T_C)
+                S_D = inputs.SD1 * F_1 / T;
+                results.spektral_bolge = 'Uzun Periyot (T_A < T ≤ T_C): S_D = S_D1 × F_1 / T';
+            } else {
+                // Çok uzun periyot (T > T_C)
+                S_D = inputs.SD1 * F_1 * T_C / (T * T);
+                results.spektral_bolge = 'Çok Uzun Periyot (T > T_C): S_D = (S_D1 × F_1 × T_C) / T²';
             }
 
+            results.S_D = S_D;
             // Zemin sınıfına göre düzeltilmiş spektral ivme
             const S_DS_zemin = inputs.SDS * F_s;
             results.S_DS_zemin = S_DS_zemin;
             
             // Yatay deprem katsayısı (TBDY 2018 Madde 16.5.2)
-            results.k_h = 0.4 * S_DS_zemin / inputs.r;
-            
+            // S_D: Yapının periyoduna göre hesaplanan spektral ivme
+            results.k_h = 0.4 * S_D / inputs.r;
+
             // Düşey deprem katsayısı (TBDY 2018 Madde 16.5.3)
             results.k_v = (2/3) * results.k_h;  // Daha doğru formül
             
@@ -1081,7 +1137,44 @@
 
         function calculateStability(inputs, geoResults, seismicResults) {
             const results = {};
-            
+
+            // TS EN 1997-1 (EC7) - Kısmi Güvenlik Faktörleri Uygulaması
+            // TBDY 2018 karakteristik değerler kullanıyorsa EC7 faktörleri yok sayılır
+            // EC7_DA1 veya EC7_DA2 seçilirse aşağıdaki faktörler kullanılır:
+
+            let gamma_G = 1.0, gamma_Q = 1.0, gamma_phi = 1.0, gamma_c = 1.0;
+            let ec7_approach = false;
+
+            if (inputs.tasarim_yaklasimi === 'EC7_DA1') {
+                // TS EN 1997-1 Yaklaşım DA1 - Kombinasyon 1
+                // Yapılara daha uygun (daha az güvenlik faktörü)
+                gamma_G = 1.35;
+                gamma_Q = 1.50;
+                gamma_phi = 1.0;
+                gamma_c = 1.0;
+                results.ec7_approach = 'DA1-Kombinasyon 1 (Yapılar)';
+                ec7_approach = true;
+            } else if (inputs.tasarim_yaklasimi === 'EC7_DA2') {
+                // TS EN 1997-1 Yaklaşım DA2
+                // Geoteknik daha ağır faktörler ile tasarlanır
+                gamma_G = 1.0;
+                gamma_Q = 1.30;
+                gamma_phi = 1.25;
+                gamma_c = 1.25;
+                results.ec7_approach = 'DA2 (Geoteknik)';
+                ec7_approach = true;
+            } else {
+                // TBDY 2018 - Karakteristik değerler (faktörsüz yükler)
+                results.ec7_approach = 'TBDY 2018 (Karakteristik Değerler)';
+                ec7_approach = false;
+            }
+
+            results.gamma_G = gamma_G;
+            results.gamma_Q = gamma_Q;
+            results.gamma_phi = gamma_phi;
+            results.gamma_c = gamma_c;
+            results.ec7_faktörleri_uygulanıyor = ec7_approach;
+
             // STATIK KONTROLLER
             
             // 1. Devrilme kontrolü
@@ -1150,15 +1243,16 @@
             results.M_D_dynamic = M_D_dynamic;
             results.GS_devrilme_dynamic = M_R_static / M_D_dynamic;
             
-            // TBDY 2018 - dinamik için 1.3-1.5 arası
-            const min_GS_devrilme_dynamic = inputs.tasarim_yaklasimi === 'TBDY' ? 1.3 : 1.4;
+            // TBDY 2018 Tablo 16.3 - dinamik devrilme FS ≥ 1.5
+            const min_GS_devrilme_dynamic = inputs.tasarim_yaklasimi === 'TBDY' ? 1.5 : 1.4;
             results.min_GS_devrilme_dynamic = min_GS_devrilme_dynamic;
             results.devrilme_dynamic_ok = results.GS_devrilme_dynamic >= min_GS_devrilme_dynamic;
             
-            // 2. Kayma kontrolü (dinamik)
+            // 2. Kayma kontrolü (dinamik) - TBDY 2018 Tablo 16.3 FS ≥ 1.2
             const F_D_dynamic = seismicResults.P_t;
             results.GS_kayma_dynamic = results.F_R_static / F_D_dynamic;
-            results.kayma_dynamic_ok = results.GS_kayma_dynamic >= 1.1;
+            const min_GS_kayma_dynamic = inputs.tasarim_yaklasimi === 'TBDY' ? 1.2 : 1.15;
+            results.kayma_dynamic_ok = results.GS_kayma_dynamic >= min_GS_kayma_dynamic;
             
             // 3. Taşıma gücü kontrolü (dinamik)
             const e_dynamic = (M_R_static - M_D_dynamic) / geoResults.V_total;
@@ -1169,11 +1263,13 @@
             const bearingResultsDynamic = calculateBearingCapacity(inputs, e_dynamic);
             const B_eff_dynamic = bearingResultsDynamic.B_eff;
             
-            const q_max_dynamic = (geoResults.V_total / B_eff_dynamic) * 
+            const q_max_dynamic = (geoResults.V_total / B_eff_dynamic) *
                                  (1 + 6 * Math.abs(e_dynamic) / inputs.B);
             results.q_max_dynamic = q_max_dynamic;
             results.GS_tasima_dynamic = results.q_ult_kullanim / q_max_dynamic;
-            results.tasima_dynamic_ok = results.GS_tasima_dynamic >= 1.0;
+            // TBDY 2018 Tablo 16.3 - dinamik taşıma gücü FS ≥ 1.5
+            const min_GS_tasima_dynamic = inputs.tasarim_yaklasimi === 'TBDY' ? 1.5 : 1.2;
+            results.tasima_dynamic_ok = results.GS_tasima_dynamic >= min_GS_tasima_dynamic;
             
             // Genel değerlendirme
             results.tum_kontroller_ok = results.devrilme_static_ok && 
@@ -1410,6 +1506,60 @@
             results.V_d_kesme = V_d_kesme;
             results.V_cr = V_cr;
             results.kesme_ok = V_d_kesme <= V_cr;
+
+            // Kesme Donatısı (Etriye) Hesabı (TS 500 Madde 8.5)
+            results.kesme_donatisi_gerekli = V_d_kesme > V_cr;
+
+            if (results.kesme_donatisi_gerekli) {
+                // Etriye donatısı alanı hesabı
+                // A_sw/s = (V_d - V_cr) / (0.9 * d * f_ywd)
+                const f_ywd = results.fyd; // Etriye dayanımı
+                const b_w = inputs.W_alt * 1000; // mm (duvar genişliği)
+
+                // Hesaplanan etriye donatı oranı
+                const A_sw_s_req = (V_d_kesme - V_cr) / (0.9 * d * f_ywd); // mm²/mm
+
+                // Minimum etriye (TS 500 §8.5.3)
+                // A_sw_s_min = 0.3 * b_w * f_ctd / f_yk
+                const A_sw_s_min = 0.3 * b_w * results.fctd / fyk; // mm²/mm
+
+                // Tasarımda kullanılacak değer
+                results.A_sw_s_required = Math.max(A_sw_s_req, A_sw_s_min); // mm²/mm
+                results.A_sw_s_required_mm2_m = results.A_sw_s_required * 1000; // mm²/m
+
+                // Etriye donatı seçimi (Φ8 ve Φ10 için)
+                const As_fi8 = Math.PI * Math.pow(8, 2) / 4; // mm² (tek fileto)
+                const As_fi10 = Math.PI * Math.pow(10, 2) / 4; // mm² (tek fileto)
+
+                // Φ8 için gerekli aralık
+                const s_fi8 = (As_fi8 * 2) / results.A_sw_s_required; // 2 kollu etriye
+                // Φ10 için gerekli aralık
+                const s_fi10 = (As_fi10 * 2) / results.A_sw_s_required; // 2 kollu etriye
+
+                // Maksimum etriye aralığı (TS 500 §8.5.3)
+                const s_max_stirrup = Math.min(
+                    0.75 * d,
+                    300, // mm
+                    200  // En sıkı sınırı
+                );
+
+                results.stirrup_spacing_fi8 = Math.round(Math.min(s_fi8, s_max_stirrup));
+                results.stirrup_spacing_fi10 = Math.round(Math.min(s_fi10, s_max_stirrup));
+                results.stirrup_spacing_max = Math.round(s_max_stirrup);
+
+                // Önerilen seçim
+                if (results.stirrup_spacing_fi10 >= 150) {
+                    results.stirrup_recommendation = 'Φ10 @' + results.stirrup_spacing_fi10 + 'mm (2 kollu)';
+                } else if (results.stirrup_spacing_fi8 >= 100) {
+                    results.stirrup_recommendation = 'Φ8 @' + results.stirrup_spacing_fi8 + 'mm (2 kollu)';
+                } else {
+                    results.stirrup_recommendation = 'Φ10 @150mm (2 kollu) - Minimum sıklık';
+                }
+            } else {
+                results.stirrup_recommendation = 'Etriye gerekli değil (V_d ≤ V_cr)';
+                results.A_sw_s_required = 0;
+                results.A_sw_s_required_mm2_m = 0;
+            }
 
             // Çatlak genişliği kontrolü (TS 500 Madde 13.5)
             // Servis yükü altında hesaplama (faktörsüz yükler)
